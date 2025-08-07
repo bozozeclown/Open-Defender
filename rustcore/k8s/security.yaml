@@ -1,0 +1,127 @@
+# k8s/security.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: security-monitoring-secrets
+  namespace: security-monitoring
+type: Opaque
+data:
+  jwt-secret: <base64-encoded-jwt-secret>
+  database-password: <base64-encoded-db-password>
+  redis-password: <base64-encoded-redis-password>
+  vault-token: <base64-encoded-vault-token>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: security-monitoring-security-config
+  namespace: security-monitoring
+data:
+  security.yaml: |
+    authentication:
+      jwt_expiry_hours: 24
+      refresh_token_expiry_hours: 168
+      mfa_enabled: true
+      mfa_methods: ["TOTP"]
+      max_login_attempts: 5
+      lockout_duration_minutes: 15
+      password_policy:
+        min_length: 12
+        require_uppercase: true
+        require_lowercase: true
+        require_numbers: true
+        require_special_chars: true
+        prevent_reuse: 5
+        expiry_days: 90
+    authorization:
+      rbac_enabled: true
+      default_role: "viewer"
+    encryption:
+      enabled: true
+      algorithm: "AES-256-GCM"
+      key_rotation_days: 90
+      sensitive_fields: ["password", "token", "secret", "key"]
+    network:
+      allowed_origins: ["https://security.yourdomain.com"]
+      rate_limiting:
+        enabled: true
+        requests_per_minute: 60
+        burst_size: 10
+        by_ip: true
+        by_user: true
+      cors:
+        allowed_origins: ["https://security.yourdomain.com"]
+        allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+        allowed_headers: ["Content-Type", "Authorization"]
+        allow_credentials: true
+        max_age_seconds: 3600
+      tls:
+        enabled: true
+        min_version: "TLSv1.2"
+        cipher_suites: ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"]
+    audit:
+      enabled: true
+      log_security_events: true
+      log_auth_events: true
+      log_data_access: true
+      retention_days: 365
+      sensitive_data_masking: true
+    secrets:
+      provider: "vault"
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: security-monitoring-psp
+  namespace: security-monitoring
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: security-monitoring-role
+  namespace: security-monitoring
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: security-monitoring-role-binding
+  namespace: security-monitoring
+subjects:
+- kind: ServiceAccount
+  name: security-monitoring-sa
+  namespace: security-monitoring
+roleRef:
+  kind: Role
+  name: security-monitoring-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: security-monitoring-sa
+  namespace: security-monitoring

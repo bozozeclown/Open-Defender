@@ -1,0 +1,151 @@
+// monitoring/grafana/dashboards/comprehensive-dashboard.json
+{
+  "dashboard": {
+    "id": null,
+    "title": "Comprehensive Security Monitoring Dashboard",
+    "tags": ["security", "comprehensive"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "memory_usage_bytes",
+            "legendFormat": "Memory Usage"
+          },
+          {
+            "expr": "cpu_usage_percent",
+            "legendFormat": "CPU Usage"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "HTTP Requests",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "yaxes": [{ "format": "short" }]
+      },
+      {
+        "id": 3,
+        "title": "Database Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(db_query_duration_seconds_sum[5m]) / rate(db_query_duration_seconds_count[5m])",
+            "legendFormat": "Average Query Time"
+          },
+          {
+            "expr": "db_connections_active",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "yaxes": [{ "format": "s" }]
+      },
+      {
+        "id": 4,
+        "title": "Event Processing",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(events_processed_total[5m])",
+            "legendFormat": "Events/sec"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(events_processed_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile latency"
+          }
+        ],
+        "yaxes": [{ "format": "short" }]
+      },
+      {
+        "id": 5,
+        "title": "Threat Detection",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(threats_detected_total[5m])",
+            "legendFormat": "{{threat_type}} ({{severity}})"
+          }
+        ],
+        "yaxes": [{ "format": "short" }]
+      },
+      {
+        "id": 6,
+        "title": "Security Events",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(authentication_failures_total[5m])",
+            "legendFormat": "Auth Failures"
+          },
+          {
+            "expr": "rate(authorization_failures_total[5m])",
+            "legendFormat": "Authz Failures"
+          },
+          {
+            "expr": "rate(suspicious_activities_total[5m])",
+            "legendFormat": "Suspicious Activities"
+          }
+        ],
+        "yaxes": [{ "format": "short" }]
+      },
+      {
+        "id": 7,
+        "title": "PostgreSQL Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "pg_stat_database_tup_inserted",
+            "legendFormat": "Inserts"
+          },
+          {
+            "expr": "pg_stat_database_tup_updated",
+            "legendFormat": "Updates"
+          },
+          {
+            "expr": "pg_stat_database_tup_deleted",
+            "legendFormat": "Deletes"
+          }
+        ],
+        "yaxes": [{ "format": "short" }]
+      },
+      {
+        "id": 8,
+        "title": "Redis Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "redis_connected_clients",
+            "legendFormat": "Connected Clients"
+          },
+          {
+            "expr": "redis_used_memory",
+            "legendFormat": "Used Memory"
+          },
+          {
+            "expr": "rate(redis_commands_processed_total[5m])",
+            "legendFormat": "Commands/sec"
+          }
+        ],
+        "yaxes": [{ "format": "short" }]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}

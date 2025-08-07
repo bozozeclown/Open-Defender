@@ -1,0 +1,84 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Security Monitoring Dashboard",
+    "tags": ["security"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Detection Results Over Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(detection_results_total[5m])",
+            "legendFormat": "{{detection_type}}"
+          }
+        ],
+        "yaxes": [{ "format": "short" }],
+        "xaxis": { "mode": "time" }
+      },
+      {
+        "id": 2,
+        "title": "Analysis Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(analysis_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "rate(analysis_duration_seconds_sum[5m]) / rate(analysis_duration_seconds_count[5m])",
+            "legendFormat": "Average"
+          }
+        ],
+        "yaxes": [{ "format": "s" }]
+      },
+      {
+        "id": 3,
+        "title": "Threat Intelligence Hits",
+        "type": "singlestat",
+        "targets": [
+          {
+            "expr": "rate(threat_intel_hits_total[5m])",
+            "legendFormat": "Hits per second"
+          }
+        ],
+        "valueName": "current"
+      },
+      {
+        "id": 4,
+        "title": "System Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"security-monitoring\"}",
+            "legendFormat": "Service Status"
+          }
+        ],
+        "thresholds": "0,1",
+        "colorValue": true
+      },
+      {
+        "id": 5,
+        "title": "Cache Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(cache_hits_total[5m])",
+            "legendFormat": "Cache Hits"
+          },
+          {
+            "expr": "rate(cache_misses_total[5m])",
+            "legendFormat": "Cache Misses"
+          }
+        ],
+        "yaxes": [{ "format": "short" }]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}

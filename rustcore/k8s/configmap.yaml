@@ -1,0 +1,24 @@
+# k8s/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: security-monitoring-config
+  namespace: security-monitoring
+data:
+  config.yaml: |
+    database:
+      url: "${DATABASE_URL}"
+      max_connections: "${DB_MAX_CONNECTIONS}"
+      min_connections: "${DB_MIN_CONNECTIONS}"
+      pool_timeout: "${DB_POOL_TIMEOUT}"
+      ssl_mode: "${DB_SSL_MODE}"
+      read_replicas: "${DB_READ_REPLICAS}"
+      failover_timeout: "${DB_FAILOVER_TIMEOUT}"
+      validation_query: "${DB_VALIDATION_QUERY}"
+      validation_interval: "${DB_VALIDATION_INTERVAL}"
+  production.yaml: |
+    app:
+      environment: "production"
+    database:
+      max_connections: "20"
+    # ... production-specific overrides

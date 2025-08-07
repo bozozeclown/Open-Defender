@@ -1,7 +1,8 @@
 Get-ChildItem -Path . -Recurse -File | 
 Where-Object { 
     $_.FullName -notlike "*\.git*" -and 
-    $_.FullName -notlike "*\.venv*"
+    $_.FullName -notlike "*\.venv*" -and
+	$_.FullName -notlike "*\target*" 
 } | 
 Sort-Object FullName | 
 ForEach-Object { 

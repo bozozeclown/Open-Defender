@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: security-monitoring
+  namespace: security-monitoring
+  labels:
+    app: security-monitoring
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: security-monitoring
+  template:
+    metadata:
+      labels:
+        app: security-monitoring
+    spec:
+      serviceAccountName: security-monitoring-sa
+      containers:
+      - name: security-monitoring
+        image: your-registry/security-monitoring:latest
+        ports:
+        - containerPort: 8000
+          name: graphql
+        - containerPort: 8001
+          name: websocket
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: RUST_LOG
+          value: "info"
+        - name: ENVIRONMENT
+          value: "production"
+        envFrom:
+        - configMapRef:
+            name: security-monitoring-config
+        - secretRef:
+            name: security-monitoring-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: security-monitoring-config

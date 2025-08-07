@@ -1,0 +1,108 @@
+# config/ports.yaml
+ports:
+  # Application Ports
+  application:
+    graphql: 8000
+    websocket: 8001
+    metrics: 9090
+    health: 8080
+    
+  # Database Ports
+  database:
+    postgres: 5432
+    postgres_exporter: 9187
+    
+  # Cache Ports
+  cache:
+    redis: 6379
+    redis_exporter: 9121
+    
+  # Monitoring Ports
+  monitoring:
+    prometheus_ui: 9091
+    prometheus_metrics: 9090
+    grafana: 3000
+    jaeger_ui: 16686
+    jaeger_collector_http: 14268
+    jaeger_collector_udp: 6831
+    node_exporter: 9100
+    cadvisor: 8080
+    alertmanager: 9093
+    
+  # Development Ports
+  development:
+    debug: 5858
+    hot_reload: 35729
+    
+  # External Access Ports
+  external:
+    https: 443
+    http: 80
+    ssh: 22
+
+# Port Mappings for Different Environments
+environments:
+  development:
+    host_ports:
+      application:
+        graphql: 8000
+        websocket: 8001
+        metrics: 9090
+        health: 8080
+      database:
+        postgres: 5432
+        postgres_exporter: 9187
+      cache:
+        redis: 6379
+        redis_exporter: 9121
+      monitoring:
+        prometheus_ui: 9091
+        prometheus_metrics: 9090
+        grafana: 3000
+        jaeger_ui: 16686
+        node_exporter: 9100
+        cadvisor: 8080
+        
+  production:
+    host_ports:
+      application:
+        graphql: 443  # Will be handled by ingress
+        websocket: 443  # Will be handled by ingress
+        metrics: 9090
+        health: 8080
+      database:
+        postgres: 5432  # Internal only
+        postgres_exporter: 9187  # Internal only
+      cache:
+        redis: 6379  # Internal only
+        redis_exporter: 9121  # Internal only
+      monitoring:
+        prometheus_ui: 9091
+        prometheus_metrics: 9090
+        grafana: 3000
+        jaeger_ui: 16686
+        node_exporter: 9100
+        cadvisor: 8080
+
+# Port Security Settings
+security:
+  # Ports that should not be exposed externally
+  internal_only:
+    - database.postgres
+    - database.postgres_exporter
+    - cache.redis
+    - cache.redis_exporter
+    - monitoring.node_exporter
+    - monitoring.cadvisor
+    
+  # Ports that require authentication
+  auth_required:
+    - application.metrics
+    - monitoring.prometheus_metrics
+    
+  # Ports that should use HTTPS
+  https_only:
+    - application.graphql
+    - application.websocket
+    - monitoring.grafana
+    - monitoring.jaeger_ui

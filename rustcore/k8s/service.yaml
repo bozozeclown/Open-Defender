@@ -1,0 +1,67 @@
+# k8s/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: security-monitoring
+  labels:
+    app: postgres
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: security-monitoring
+  labels:
+    app: redis
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+  selector:
+    app: redis
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: security-monitoring
+  namespace: security-monitoring
+  labels:
+    app: security-monitoring
+spec:
+  ports:
+  - name: graphql
+    port: 8000
+    targetPort: 8000
+  - name: websocket
+    port: 8001
+    targetPort: 8001
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+  selector:
+    app: security-monitoring
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: security-monitoring
+  labels:
+    app: prometheus
+spec:
+  ports:
+  - port: 9090
+    targetPort: 9090
+  selector:
+    app: prometheus
+  type: ClusterIP

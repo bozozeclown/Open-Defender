@@ -1,71 +1,60 @@
-// src/error.rs
 use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum AppError {
-    #[error("Database error: {0}")]
-    Database(#[from] anyhow::Error),
-    
-    #[error("Configuration error: {0}")]
-    Configuration(String),
-    
-    #[error("Validation error: {0}")]
-    Validation(String),
-    
-    #[error("Not found: {0}")]
-    NotFound(String),
-    
-    #[error("Authentication error: {0}")]
-    Authentication(String),
-    
-    #[error("Authorization error: {0}")]
-    Authorization(String),
-    
-    #[error("Internal error: {0}")]
-    Internal(String),
-}
 
 pub type AppResult<T> = Result<T, AppError>;
 
-// Conversion helpers for common error types
-impl From<sqlx::Error> for AppError {
-    fn from(err: sqlx::Error) -> Self {
-        AppError::Database(anyhow::anyhow!("Database error: {}", err))
-    }
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("Detection error: {0}")]
+    Detection(#[from] DetectionError),
+    
+    #[error("Configuration error: {0}")]
+    Config(#[from] ConfigError),
+    
+    #[error("Database error: {0}")]
+    Database(#[from] sqlx::Error),
+    
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+    
+    #[error("Serialization error: {0}")]
+    Serialization(#[from] serde_json::Error),
+    
+    #[error("Authentication error: {0}")]
+    Auth(#[from] AuthError),
 }
 
-impl From<serde_json::Error> for AppError {
-    fn from(err: serde_json::Error) -> Self {
-        AppError::Validation(format!("JSON error: {}", err))
-    }
+#[derive(Error, Debug)]
+pub enum DetectionError {
+    #[error("ML model not trained")]
+    ModelNotTrained,
+    
+    #[error("Feature extraction failed: {0}")]
+    FeatureExtraction(String),
+    
+    #[error("Threat intelligence unavailable")]
+    ThreatIntelUnavailable,
+    
+    #[error("Invalid detection rule: {0}")]
+    InvalidRule(String),
 }
 
-impl From<std::io::Error> for AppError {
-    fn from(err: std::io::Error) -> Self {
-        AppError::Internal(format!("IO error: {}", err))
-    }
+#[derive(Error, Debug)]
+pub enum ConfigError {
+    #[error("Missing configuration: {0}")]
+    Missing(String),
+    
+    #[error("Invalid configuration value: {0}")]
+    InvalidValue(String),
 }
 
-impl From<env::VarError> for AppError {
-    fn from(err: env::VarError) -> Self {
-        AppError::Configuration(format!("Environment variable error: {}", err))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_error_display() {
-        let error = AppError::NotFound("Resource not found".to_string());
-        assert_eq!(error.to_string(), "Not found: Resource not found");
-    }
-
-    #[test]
-    fn test_error_conversion() {
-        let db_error = sqlx::Error::RowNotFound;
-        let app_error: AppError = db_error.into();
-        assert!(matches!(app_error, AppError::Database(_)));
-    }
+#[derive(Error, Debug)]
+pub enum AuthError {
+    #[error("Invalid token")]
+    InvalidToken,
+    
+    #[error("Expired token")]
+    ExpiredToken,
+    
+    #[error("Insufficient permissions")]
+    InsufficientPermissions,
 }

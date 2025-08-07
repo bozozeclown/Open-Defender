@@ -1,0 +1,38 @@
+groups:
+  - name: security-monitoring
+    rules:
+      - alert: HighDetectionLatency
+        expr: histogram_quantile(0.95, rate(analysis_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High detection latency detected"
+          description: "95th percentile detection latency is above 1 second for 5 minutes"
+
+      - alert: DetectionEngineDegraded
+        expr: up{job="security-monitoring"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Detection engine is down"
+          description: "Security monitoring service is not responding"
+
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / 1024 / 1024 > 1024
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Service is using more than 1GB of memory"
+
+      - alert: DatabaseConnectionPoolFull
+        expr: sqlx_connections_max - sqlx_connections_idle < 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool nearly full"
+          description: "Fewer than 5 database connections available"
