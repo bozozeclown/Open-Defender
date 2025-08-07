@@ -77,8 +77,8 @@ The system is built with a microservices architecture with the following compone
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/your-org/security-monitoring.git
-cd security-monitoring
+git clone https://github.com/bozozeclown/Open-Defender.git
+cd Open-Defender
 ```
 
 2. **Set up environment variables**
@@ -135,7 +135,7 @@ export JWT_SECRET=your-super-secret-jwt-key-change-in-production
 kubectl apply -f k8s/
 
 # Verify deployment
-kubectl get pods -n security-monitoring
+kubectl get pods -n Open-Defender
 ```
 
 ## Configuration
@@ -416,7 +416,7 @@ cargo run --bin migrate -- --env production
 3. **Service Deployment**
 ```bash
 # Deploy with systemd
-sudo systemctl start security-monitoring
+sudo systemctl start Open-Defender
 
 # Or use Docker
 docker-compose -f docker-compose.prod.yml up -d
@@ -429,22 +429,22 @@ docker-compose -f docker-compose.prod.yml up -d
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: security-monitoring
-  namespace: security-monitoring
+  name: Open-Defender
+  namespace: Open-Defender
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: security-monitoring
+      app: Open-Defender
   template:
     metadata:
       labels:
-        app: security-monitoring
+        app: Open-Defender
     spec:
-      serviceAccountName: security-monitoring-sa
+      serviceAccountName: Open-Defender-sa
       containers:
-      - name: security-monitoring
-        image: your-registry/security-monitoring:latest
+      - name: Open-Defender
+        image: your-registry/Open-Defender:latest
         ports:
         - containerPort: 8443
         env:
@@ -454,9 +454,9 @@ spec:
           value: "production"
         envFrom:
         - configMapRef:
-            name: security-monitoring-config
+            name: Open-Defender-config
         - secretRef:
-            name: security-monitoring-secrets
+            name: Open-Defender-secrets
         resources:
           requests:
             memory: "512Mi"
@@ -496,9 +496,9 @@ rule_files:
   - "alert_rules.yml"
 
 scrape_configs:
-  - job_name: 'security-monitoring'
+  - job_name: 'Open-Defender'
     static_configs:
-      - targets: ['security-monitoring:9090']
+      - targets: ['Open-Defender:9090']
     metrics_path: '/metrics'
     scrape_interval: 10s
     basic_auth:
@@ -517,7 +517,7 @@ Import the provided dashboards from `monitoring/grafana/dashboards/` or create c
 **Symptoms**: Container exits immediately or service fails to start
 
 **Solutions**:
-1. Check logs: `docker-compose logs security-monitoring`
+1. Check logs: `docker-compose logs Open-Defender`
 2. Verify configuration: `./scripts/validate-config.sh`
 3. Check dependencies: `./scripts/validate-dependencies.sh`
 4. Verify environment variables: `env | grep -E '(DATABASE_URL|REDIS_URL|JWT_SECRET)'`
@@ -529,7 +529,7 @@ Import the provided dashboards from `monitoring/grafana/dashboards/` or create c
 1. Check database status: `docker-compose ps postgres`
 2. Verify connection string: `./scripts/validate-db-connections.sh`
 3. Check database logs: `docker-compose logs postgres`
-4. Test connectivity: `docker-compose exec security-monitoring psql $DATABASE_URL -c "SELECT 1"`
+4. Test connectivity: `docker-compose exec Open-Defender psql $DATABASE_URL -c "SELECT 1"`
 
 #### High Memory Usage
 **Symptoms**: Service consuming excessive memory
@@ -580,24 +580,24 @@ curl -s https://security.yourdomain.com/health | jq .
 ./scripts/validate-resilience.sh
 
 # View recent errors
-docker-compose logs security-monitoring | grep ERROR | tail -20
+docker-compose logs Open-Defender | grep ERROR | tail -20
 
 # Monitor resource usage
-docker stats security-monitoring
+docker stats Open-Defender
 
 # Check Kubernetes pod status
-kubectl get pods -n security-monitoring
-kubectl describe pod <pod-name> -n security-monitoring
+kubectl get pods -n Open-Defender
+kubectl describe pod <pod-name> -n Open-Defender
 ```
 
 ### Log Analysis
 
 ```bash
 # View application logs
-docker-compose logs -f security-monitoring
+docker-compose logs -f Open-Defender
 
 # Filter for errors
-docker-compose logs security-monitoring | grep ERROR
+docker-compose logs Open-Defender | grep ERROR
 
 # View database logs
 docker-compose logs postgres
@@ -618,8 +618,8 @@ curl -s https://security.yourdomain.com/metrics | grep -E "(http_requests_total|
 ## Support
 
 - **Documentation**: Full documentation is available at [docs.example.com](https://docs.example.com)
-- **Issues**: Report bugs and request features on [GitHub Issues](https://github.com/your-org/security-monitoring/issues)
-- **Discussions**: Join our community discussions on [GitHub Discussions](https://github.com/your-org/security-monitoring/discussions)
+- **Issues**: Report bugs and request features on [GitHub Issues](https://github.com/your-org/Open-Defender/issues)
+- **Discussions**: Join our community discussions on [GitHub Discussions](https://github.com/your-org/Open-Defender/discussions)
 - **Email**: Contact the team at security@example.com
 
 ## Contributing
@@ -687,7 +687,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 set -e
 
 ENVIRONMENT=${1:-production}
-NAMESPACE=${2:-security-monitoring}
+NAMESPACE=${2:-Open-Defender}
 
 echo "Verifying deployment for environment: $ENVIRONMENT"
 echo "Namespace: $NAMESPACE"
@@ -848,7 +848,7 @@ verify_health_endpoints() {
     log_info "Verifying health endpoints..."
     
     # Get application service
-    local app_service=$(kubectl get svc -n "$NAMESPACE" -l app=security-monitoring -o jsonpath='{.items[0].metadata.name}')
+    local app_service=$(kubectl get svc -n "$NAMESPACE" -l app=Open-Defender -o jsonpath='{.items[0].metadata.name}')
     
     if [ -z "$app_service" ]; then
         log_error "Application service not found"
@@ -899,7 +899,7 @@ verify_metrics_endpoint() {
     log_info "Verifying metrics endpoint..."
     
     # Get application service
-    local app_service=$(kubectl get svc -n "$NAMESPACE" -l app=security-monitoring -o jsonpath='{.items[0].metadata.name}')
+    local app_service=$(kubectl get svc -n "$NAMESPACE" -l app=Open-Defender -o jsonpath='{.items[0].metadata.name}')
     
     if [ -z "$app_service" ]; then
         log_error "Application service not found"
@@ -943,7 +943,7 @@ verify_database_connectivity() {
     fi
     
     # Test database connectivity from application pod
-    local app_pod=$(kubectl get pods -n "$NAMESPACE" -l app=security-monitoring -o jsonpath='{.items[0].metadata.name}')
+    local app_pod=$(kubectl get pods -n "$NAMESPACE" -l app=Open-Defender -o jsonpath='{.items[0].metadata.name}')
     
     if [ -z "$app_pod" ]; then
         log_error "Application pod not found"
@@ -971,7 +971,7 @@ verify_redis_connectivity() {
     fi
     
     # Test Redis connectivity from application pod
-    local app_pod=$(kubectl get pods -n "$NAMESPACE" -l app=security-monitoring -o jsonpath='{.items[0].metadata.name}')
+    local app_pod=$(kubectl get pods -n "$NAMESPACE" -l app=Open-Defender -o jsonpath='{.items[0].metadata.name}')
     
     if [ -z "$app_pod" ]; then
         log_error "Application pod not found"
@@ -1017,7 +1017,7 @@ verify_security_configurations() {
     # Check for secrets
     local secrets=($(kubectl get secrets -n "$NAMESPACE" -o jsonpath='{.items[*].metadata.name}'))
     
-    if [[ ! " ${secrets[*]} " =~ " security-monitoring-secrets " ]]; then
+    if [[ ! " ${secrets[*]} " =~ " Open-Defender-secrets " ]]; then
         log_error "Security monitoring secrets not found"
         exit 1
     fi
@@ -1165,22 +1165,22 @@ When experiencing issues, follow these quick steps to identify the problem:
 curl -s https://security.yourdomain.com/health | jq .
 
 # Check if all services are running
-kubectl get pods -n security-monitoring
+kubectl get pods -n Open-Defender
 
 # Check resource usage
-kubectl top pods -n security-monitoring
+kubectl top pods -n Open-Defender
 ```
 
 ### 2. Check Recent Errors
 ```bash
 # View recent application errors
-docker-compose logs security-monitoring | grep ERROR | tail -20
+docker-compose logs Open-Defender | grep ERROR | tail -20
 
 # Check Kubernetes events
-kubectl get events -n security-monitoring --sort-by='.lastTimestamp'
+kubectl get events -n Open-Defender --sort-by='.lastTimestamp'
 
 # View system logs
-journalctl -u security-monitoring -n 100
+journalctl -u Open-Defender -n 100
 ```
 
 ### 3. Verify Connectivity
@@ -1207,13 +1207,13 @@ journalctl -u security-monitoring -n 100
 #### Diagnosis
 ```bash
 # Check container logs
-docker-compose logs security-monitoring
+docker-compose logs Open-Defender
 
 # Check Kubernetes pod status
-kubectl describe pod <pod-name> -n security-monitoring
+kubectl describe pod <pod-name> -n Open-Defender
 
 # Check recent events
-kubectl get events -n security-monitoring
+kubectl get events -n Open-Defender
 ```
 
 #### Solutions
@@ -1227,7 +1227,7 @@ kubectl get events -n security-monitoring
 env | grep -E '(DATABASE_URL|REDIS_URL|JWT_SECRET|RUST_LOG)'
 
 # Verify configuration files
-kubectl get configmap security-monitoring-config -n security-monitoring -o yaml
+kubectl get configmap Open-Defender-config -n Open-Defender -o yaml
 ```
 
 **2. Missing Dependencies**
@@ -1236,22 +1236,22 @@ kubectl get configmap security-monitoring-config -n security-monitoring -o yaml
 docker-compose ps
 
 # Verify database is ready
-kubectl exec -it <postgres-pod> -n security-monitoring -- pg_isready
+kubectl exec -it <postgres-pod> -n Open-Defender -- pg_isready
 
 # Verify Redis is ready
-kubectl exec -it <redis-pod> -n security-monitoring -- redis-cli ping
+kubectl exec -it <redis-pod> -n Open-Defender -- redis-cli ping
 ```
 
 **3. Resource Constraints**
 ```bash
 # Check resource usage
-kubectl top pods -n security-monitoring
+kubectl top pods -n Open-Defender
 
 # Check pod events for OOM (Out of Memory)
-kubectl describe pod <pod-name> -n security-monitoring | grep -i oom
+kubectl describe pod <pod-name> -n Open-Defender | grep -i oom
 
 # Increase memory limits if needed
-kubectl edit deployment security-monitoring -n security-monitoring
+kubectl edit deployment Open-Defender -n Open-Defender
 ```
 
 ### Database Connection Issues
@@ -1274,7 +1274,7 @@ docker-compose logs postgres
 curl -s http://localhost:9090/metrics | grep db_connections
 
 # Monitor active connections
-kubectl exec -it <postgres-pod> -n security-monitoring -- psql -c "SELECT count(*) FROM pg_stat_activity;"
+kubectl exec -it <postgres-pod> -n Open-Defender -- psql -c "SELECT count(*) FROM pg_stat_activity;"
 ```
 
 #### Solutions
@@ -1285,10 +1285,10 @@ kubectl exec -it <postgres-pod> -n security-monitoring -- psql -c "SELECT count(
 echo $DATABASE_URL
 
 # Test connection manually
-kubectl exec -it <app-pod> -n security-monitoring -- psql $DATABASE_URL -c "SELECT 1;"
+kubectl exec -it <app-pod> -n Open-Defender -- psql $DATABASE_URL -c "SELECT 1;"
 
 # Update connection string if needed
-kubectl edit configmap security-monitoring-config -n security-monitoring
+kubectl edit configmap Open-Defender-config -n Open-Defender
 ```
 
 **2. Connection Pool Configuration**
@@ -1403,10 +1403,10 @@ WHERE role_name IN (SELECT unnest(roles) FROM users WHERE username = 'your_usern
 curl -o /dev/null -s -w "%{time_total}\n" https://security.yourdomain.com/health
 
 # Check CPU usage
-kubectl top pods -n security-monitoring
+kubectl top pods -n Open-Defender
 
 # Check memory usage
-kubectl top pods -n security-monitoring | awk '{print $4}'
+kubectl top pods -n Open-Defender | awk '{print $4}'
 
 # Check application metrics
 curl -s http://localhost:9090/metrics | grep -E "(http_request_duration|cpu_usage|memory_usage)"
@@ -1454,7 +1454,7 @@ spec:
   template:
     spec:
       containers:
-      - name: security-monitoring
+      - name: Open-Defender
         resources:
           requests:
             memory: "1Gi"
@@ -1475,13 +1475,13 @@ spec:
 #### Diagnosis
 ```bash
 # Check memory usage
-kubectl top pods -n security-monitoring
+kubectl top pods -n Open-Defender
 
 # Check for OOM events
-kubectl describe pod <pod-name> -n security-monitoring | grep -i oom
+kubectl describe pod <pod-name> -n Open-Defender | grep -i oom
 
 # Monitor memory over time
-kubectl top pods -n security-monitoring --watch
+kubectl top pods -n Open-Defender --watch
 
 # Check application memory metrics
 curl -s http://localhost:9090/metrics | grep memory_usage
@@ -1542,13 +1542,13 @@ fn process_events(events: &[Event]) -> Result<()> {
 ./scripts/validate-network.sh
 
 # Check DNS resolution
-kubectl exec -it <app-pod> -n security-monitoring -- nslookup postgres
+kubectl exec -it <app-pod> -n Open-Defender -- nslookup postgres
 
 # Test service connectivity
-kubectl exec -it <app-pod> -n security-monitoring -- wget -qO- http://postgres:5432
+kubectl exec -it <app-pod> -n Open-Defender -- wget -qO- http://postgres:5432
 
 # Check network policies
-kubectl get networkpolicy -n security-monitoring
+kubectl get networkpolicy -n Open-Defender
 ```
 
 #### Solutions
@@ -1559,12 +1559,12 @@ kubectl get networkpolicy -n security-monitoring
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: security-monitoring-netpol
-  namespace: security-monitoring
+  name: Open-Defender-netpol
+  namespace: Open-Defender
 spec:
   podSelector:
     matchLabels:
-      app: security-monitoring
+      app: Open-Defender
   policyTypes:
   - Ingress
   - Egress
@@ -1586,10 +1586,10 @@ spec:
 **2. Service Discovery**
 ```bash
 # Verify service endpoints
-kubectl get endpoints -n security-monitoring
+kubectl get endpoints -n Open-Defender
 
 # Test service connectivity within cluster
-kubectl exec -it <app-pod> -n security-monitoring -- curl http://security-monitoring:8443/health
+kubectl exec -it <app-pod> -n Open-Defender -- curl http://Open-Defender:8443/health
 ```
 
 **3. DNS Configuration**
@@ -1630,16 +1630,16 @@ data:
 #### Diagnosis
 ```bash
 # Check pod status
-kubectl get pods -n security-monitoring -o wide
+kubectl get pods -n Open-Defender -o wide
 
 # Describe pod for detailed information
-kubectl describe pod <pod-name> -n security-monitoring
+kubectl describe pod <pod-name> -n Open-Defender
 
 # Check events
-kubectl get events -n security-monitoring --sort-by='.lastTimestamp'
+kubectl get events -n Open-Defender --sort-by='.lastTimestamp'
 
 # Check resource quotas
-kubectl get resourcequota -n security-monitoring
+kubectl get resourcequota -n Open-Defender
 ```
 
 #### Solutions
@@ -1647,7 +1647,7 @@ kubectl get resourcequota -n security-monitoring
 **1. Image Pull Issues**
 ```bash
 # Check image pull secrets
-kubectl get secrets -n security-monitoring | grep image
+kubectl get secrets -n Open-Defender | grep image
 
 # Create image pull secret if needed
 kubectl create secret docker-registry regcred \
@@ -1655,34 +1655,34 @@ kubectl create secret docker-registry regcred \
   --docker-username=<your-name> \
   --docker-password=<your-pword> \
   --docker-email=<your-email> \
-  -n security-monitoring
+  -n Open-Defender
 
 # Update service account to use image pull secret
-kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}' -n security-monitoring
+kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}' -n Open-Defender
 ```
 
 **2. Persistent Volume Issues**
 ```bash
 # Check persistent volume claims
-kubectl get pvc -n security-monitoring
+kubectl get pvc -n Open-Defender
 
 # Check persistent volumes
-kubectl get pv -n security-monitoring
+kubectl get pv -n Open-Defender
 
 # Check storage classes
 kubectl get storageclass
 
 # Describe PVC for events
-kubectl describe pvc <pvc-name> -n security-monitoring
+kubectl describe pvc <pvc-name> -n Open-Defender
 ```
 
 **3. Resource Quotas**
 ```bash
 # Check current resource usage
-kubectl describe resourcequota -n security-monitoring
+kubectl describe resourcequota -n Open-Defender
 
 # Request quota increase if needed
-kubectl edit resourcequota <quota-name> -n security-monitoring
+kubectl edit resourcequota <quota-name> -n Open-Defender
 ```
 
 ## Diagnostic Tools
@@ -1703,16 +1703,16 @@ The system includes several diagnostic scripts:
 
 ```bash
 # Port forwarding for local access
-kubectl port-forward -n security-monitoring svc/security-monitoring 8443:8443
+kubectl port-forward -n Open-Defender svc/Open-Defender 8443:8443
 
 # Debug container
-kubectl debug -it <pod-name> -n security-monitoring --image=busybox --target=security-monitoring
+kubectl debug -it <pod-name> -n Open-Defender --image=busybox --target=Open-Defender
 
 # Copy files from pod
-kubectl cp <pod-name>:/path/to/file ./local-file -n security-monitoring
+kubectl cp <pod-name>:/path/to/file ./local-file -n Open-Defender
 
 # Execute commands in pod
-kubectl exec -it <pod-name> -n security-monitoring -- /bin/bash
+kubectl exec -it <pod-name> -n Open-Defender -- /bin/bash
 ```
 
 ### Performance Profiling Tools
@@ -1737,26 +1737,26 @@ wireshark capture.pcap
 
 ```bash
 # View all logs
-kubectl logs -n security-monitoring deployment/security-monitoring -f
+kubectl logs -n Open-Defender deployment/Open-Defender -f
 
 # View logs from specific time
-kubectl logs -n security-monitoring deployment/security-monitoring --since=1h
+kubectl logs -n Open-Defender deployment/Open-Defender --since=1h
 
 # Filter logs by container
-kubectl logs -n security-monitoring deployment/security-monitoring -c security-monitoring
+kubectl logs -n Open-Defender deployment/Open-Defender -c Open-Defender
 ```
 
 ### Log Patterns to Monitor
 
 ```bash
 # Error patterns
-grep -E "(ERROR|FATAL|PANIC)" logs/security-monitoring.log
+grep -E "(ERROR|FATAL|PANIC)" logs/Open-Defender.log
 
 # Database connection issues
-grep -E "(connection.*refused|authentication.*failed|timeout)" logs/security-monitoring.log
+grep -E "(connection.*refused|authentication.*failed|timeout)" logs/Open-Defender.log
 
 # Memory issues
-grep -E "(out of memory|OOM|allocation.*failed)" logs/security-monitoring.log
+grep -E "(out of memory|OOM|allocation.*failed)" logs/Open-Defender.log
 
 # Security events
 grep -E "(authentication|authorization|security|threat)" logs/security-audit.log
@@ -1766,13 +1766,13 @@ grep -E "(authentication|authorization|security|threat)" logs/security-audit.log
 
 ```bash
 # Use jq for structured log analysis
-cat logs/security-monitoring.log | jq 'select(.level == "ERROR")'
+cat logs/Open-Defender.log | jq 'select(.level == "ERROR")'
 
 # Use awk for text log analysis
-awk '/ERROR/ {print $1, $2, $7}' logs/security-monitoring.log | sort | uniq -c
+awk '/ERROR/ {print $1, $2, $7}' logs/Open-Defender.log | sort | uniq -c
 
 # Use grep for pattern matching
-grep -A 5 -B 5 "database.*timeout" logs/security-monitoring.log
+grep -A 5 -B 5 "database.*timeout" logs/Open-Defender.log
 ```
 
 ## Performance Profiling
@@ -1838,31 +1838,31 @@ tcpdump -i eth0 -w capture.pcap port 8443
 1. **Assess the Situation**
 ```bash
 # Check service status
-kubectl get pods -n security-monitoring
+kubectl get pods -n Open-Defender
 
 # Check health endpoints
 curl -s https://security.yourdomain.com/health | jq .
 
 # Check recent errors
-kubectl get events -n security-monitoring --sort-by='.lastTimestamp' | tail -20
+kubectl get events -n Open-Defender --sort-by='.lastTimestamp' | tail -20
 ```
 
 2. **Restart Services**
 ```bash
 # Restart deployment
-kubectl rollout restart deployment/security-monitoring -n security-monitoring
+kubectl rollout restart deployment/Open-Defender -n Open-Defender
 
 # Roll back to previous version
-kubectl rollout undo deployment/security-monitoring -n security-monitoring
+kubectl rollout undo deployment/Open-Defender -n Open-Defender
 ```
 
 3. **Scale Resources**
 ```bash
 # Scale up replicas
-kubectl scale deployment/security-monitoring --replicas=5 -n security-monitoring
+kubectl scale deployment/Open-Defender --replicas=5 -n Open-Defender
 
 # Increase resource limits
-kubectl edit deployment/security-monitoring -n security-monitoring
+kubectl edit deployment/Open-Defender -n Open-Defender
 ```
 
 ### Security Incident
@@ -1870,18 +1870,18 @@ kubectl edit deployment/security-monitoring -n security-monitoring
 1. **Isolate Affected Systems**
 ```bash
 # Scale down affected services
-kubectl scale deployment/security-monitoring --replicas=0 -n security-monitoring
+kubectl scale deployment/Open-Defender --replicas=0 -n Open-Defender
 
 # Block malicious IPs
-kubectl annotate networkpolicy security-monitoring-netpol \
+kubectl annotate networkpolicy Open-Defender-netpol \
   net.beta.kubernetes.io/network-policy="" \
-  -n security-monitoring
+  -n Open-Defender
 ```
 
 2. **Collect Evidence**
 ```bash
 # Export logs
-kubectl logs deployment/security-monitoring -n security-monitoring > incident-logs.txt
+kubectl logs deployment/Open-Defender -n Open-Defender > incident-logs.txt
 
 # Export metrics
 curl -s http://localhost:9090/metrics > incident-metrics.txt
@@ -1896,10 +1896,10 @@ curl -s http://localhost:9090/metrics > incident-metrics.txt
 kubectl apply -f k8s/backup/
 
 # Scale up services gradually
-kubectl scale deployment/security-monitoring --replicas=1 -n security-monitoring
+kubectl scale deployment/Open-Defender --replicas=1 -n Open-Defender
 
 # Monitor for issues
-kubectl get pods -n security-monitoring -w
+kubectl get pods -n Open-Defender -w
 ```
 
 ### Data Corruption
@@ -1907,28 +1907,28 @@ kubectl get pods -n security-monitoring -w
 1. **Identify Corruption**
 ```bash
 # Check database consistency
-kubectl exec -it <postgres-pod> -n security-monitoring -- psql -c "VACUUM VERBOSE;"
+kubectl exec -it <postgres-pod> -n Open-Defender -- psql -c "VACUUM VERBOSE;"
 
 # Check table integrity
-kubectl exec -it <postgres-pod> -n security-monitoring -- psql -c "SELECT * FROM pg_stat_all_tables WHERE n_dead_tup > 0;"
+kubectl exec -it <postgres-pod> -n Open-Defender -- psql -c "SELECT * FROM pg_stat_all_tables WHERE n_dead_tup > 0;"
 ```
 
 2. **Restore from Backup**
 ```bash
 # Restore database
-kubectl exec -it <postgres-pod> -n security-monitoring -- psql -d security_monitoring -f /backups/latest.sql
+kubectl exec -it <postgres-pod> -n Open-Defender -- psql -d security_monitoring -f /backups/latest.sql
 
 # Verify restoration
-kubectl exec -it <postgres-pod> -n security-monitoring -- psql -d security_monitoring -c "SELECT COUNT(*) FROM events;"
+kubectl exec -it <postgres-pod> -n Open-Defender -- psql -d security_monitoring -c "SELECT COUNT(*) FROM events;"
 ```
 
 3. **Prevent Future Corruption**
 ```bash
 # Enable WAL archiving
-kubectl exec -it <postgres-pod> -n security-monitoring -- psql -c "ALTER SYSTEM SET archive_mode = 'on';"
+kubectl exec -it <postgres-pod> -n Open-Defender -- psql -c "ALTER SYSTEM SET archive_mode = 'on';"
 
 # Increase checkpoint frequency
-kubectl exec -it <postgres-pod> -n security-monitoring -- psql -c "ALTER SYSTEM SET checkpoint_timeout = '5min';"
+kubectl exec -it <postgres-pod> -n Open-Defender -- psql -c "ALTER SYSTEM SET checkpoint_timeout = '5min';"
 ```
 
 ## Getting Help
