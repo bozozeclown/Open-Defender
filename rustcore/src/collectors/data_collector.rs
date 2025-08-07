@@ -3,13 +3,24 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use lru::LruCache;
+use pnet::datalink::{self, Channel::Ethernet};
+use pnet::packet::ethernet::{EtherTypes, EthernetPacket};
+use pnet::packet::ip::IpNextHeaderProtocols;
+use pnet::packet::ipv4::Ipv4Packet;
+use pnet::packet::tcp::TcpPacket;
+use pnet::packet::udp::UdpPacket;
+use pnet::packet::Packet;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{mpsc, Mutex, RwLock};
+use tokio::task;
 use tracing::{debug, error, info, warn};
 use uuid::Uuid;
+use windows::Win32::System::Diagnostics::Etw::*;
+use windows::Win32::System::Threading::*;
+use windows::core::*;
 
 use crate::collectors::{DataEvent, EventData};
 use crate::config::CollectorConfig;
@@ -19,19 +30,47 @@ pub struct DataCollector {
     config: CollectorConfig,
     db: Arc<DatabaseManager>,
     event_cache: Arc<Mutex<LruCache<String, DataEvent>>>,
+    etw_session: Option<EtwSession>,
+    network_interface: Option<String>,
 }
 
 impl DataCollector {
-    pub fn new(config: CollectorConfig, db: Arc<DatabaseManager>) -> Self {
+    pub fn new(config: CollectorConfig, db: Arc<DatabaseManager>) -> Result<Self> {
         let cache_size = config.max_features;
-        Self {
+        let network_interface = config.network_filter.clone();
+        
+        Ok(Self {
             config,
             db,
             event_cache: Arc::new(Mutex::new(LruCache::new(cache_size))),
-        }
+            etw_session: None,
+            network_interface,
+        })
     }
 
     pub async fn run(&self, sender: mpsc::Sender<DataEvent>) -> Result<()> {
+        // Initialize ETW session if on Windows
+        #[cfg(target_os = "windows")]
+        {
+            if !self.config.etw_providers.is_empty() {
+                self.init_etw_session().await?;
+            }
+        }
+
+        // Initialize network capture
+        let network_handle = if self.config.event_types.contains(&"network".to_string()) {
+            Some(self.start_network_capture(sender.clone()).await?)
+        } else {
+            None
+        };
+
+        // Initialize file system watcher
+        let file_handle = if self.config.event_types.contains(&"file".to_string()) {
+            Some(self.start_file_watcher(sender.clone()).await?)
+        } else {
+            None
+        };
+
         let mut interval = tokio::time::interval(
             tokio::time::Duration::from_secs_f64(self.config.polling_interval),
         );
@@ -40,15 +79,16 @@ impl DataCollector {
             interval.tick().await;
 
             // Collect events based on configured event types
-            for event_type in &self.config.event_types {
-                match event_type.as_str() {
-                    "process" => self.collect_process_events(&sender).await?,
-                    "network" => self.collect_network_events(&sender).await?,
-                    "file" => self.collect_file_events(&sender).await?,
-                    "gpu" => self.collect_gpu_events(&sender).await?,
-                    "feedback" => self.collect_feedback_events(&sender).await?,
-                    _ => warn!("Unknown event type: {}", event_type),
-                }
+            if self.config.event_types.contains(&"process".to_string()) {
+                self.collect_process_events(&sender).await?;
+            }
+
+            if self.config.event_types.contains(&"gpu".to_string()) {
+                self.collect_gpu_events(&sender).await?;
+            }
+
+            if self.config.event_types.contains(&"feedback".to_string()) {
+                self.collect_feedback_events(&sender).await?;
             }
 
             // Process events in batches
@@ -56,11 +96,208 @@ impl DataCollector {
         }
     }
 
-    async fn collect_process_events(&self, sender: &mpsc::Sender<DataEvent>) -> Result<()> {
-        let processes = sysinfo::System::new_all();
-        processes.refresh_all();
+    #[cfg(target_os = "windows")]
+    async fn init_etw_session(&mut self) -> Result<()> {
+        use windows::Win32::System::Diagnostics::Etw::*;
 
-        for (pid, process) in processes.processes() {
+        // Create ETW session
+        let session = EtwSession::new(&self.config.etw_providers)?;
+        self.etw_session = Some(session);
+        info!("ETW session initialized");
+        Ok(())
+    }
+
+    async fn start_network_capture(&self, sender: mpsc::Sender<DataEvent>) -> Result<task::JoinHandle<()>> {
+        let interface_name = self.network_interface.clone();
+        let config = self.config.clone();
+        
+        let handle = task::spawn(async move {
+            if let Ok(interface_name) = interface_name {
+                // Find the network interface
+                let interface_names_match = |iface: &datalink::NetworkInterface| iface.name == interface_name;
+                
+                let interfaces = datalink::interfaces();
+                let interface = interfaces.into_iter()
+                    .find(interface_names_match)
+                    .unwrap_or_else(|| {
+                        warn!("Network interface {} not found, using default", interface_name);
+                        datalink::interfaces()
+                            .into_iter()
+                            .next()
+                            .expect("No network interface available")
+                    });
+
+                // Create a channel to receive packets
+                let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
+                    Ok(Ethernet(tx, rx)) => (tx, rx),
+                    Ok(_) => panic!("Unsupported channel type"),
+                    Err(e) => {
+                        error!("Failed to create datalink channel: {}", e);
+                        return;
+                    }
+                };
+
+                loop {
+                    match rx.next() {
+                        Ok(packet) => {
+                            if let Some(event) = Self::process_network_packet(packet, &config) {
+                                if let Err(e) = sender.send(event).await {
+                                    error!("Failed to send network event: {}", e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to receive packet: {}", e);
+                        }
+                    }
+                }
+            }
+        });
+
+        Ok(handle)
+    }
+
+    fn process_network_packet(packet: &[u8], config: &CollectorConfig) -> Option<DataEvent> {
+        let ethernet_packet = EthernetPacket::new(packet)?;
+        
+        match ethernet_packet.get_ethertype() {
+            EtherTypes::Ipv4 => {
+                let ipv4_packet = Ipv4Packet::new(ethernet_packet.payload())?;
+                
+                match ipv4_packet.get_next_level_protocol() {
+                    IpNextHeaderProtocols::Tcp => {
+                        let tcp_packet = TcpPacket::new(ipv4_packet.payload())?;
+                        
+                        Some(DataEvent {
+                            event_id: Uuid::new_v4(),
+                            event_type: "network".to_string(),
+                            timestamp: Utc::now(),
+                            data: EventData::Network {
+                                src_ip: ipv4_packet.get_source().to_string(),
+                                src_port: tcp_packet.get_source(),
+                                dst_ip: ipv4_packet.get_destination().to_string(),
+                                dst_port: tcp_packet.get_destination(),
+                                protocol: "TCP".to_string(),
+                                packet_size: packet.len() as u32,
+                                flags: format!("{:?}", tcp_packet.get_flags()),
+                            },
+                        })
+                    }
+                    IpNextHeaderProtocols::Udp => {
+                        let udp_packet = UdpPacket::new(ipv4_packet.payload())?;
+                        
+                        Some(DataEvent {
+                            event_id: Uuid::new_v4(),
+                            event_type: "network".to_string(),
+                            timestamp: Utc::now(),
+                            data: EventData::Network {
+                                src_ip: ipv4_packet.get_source().to_string(),
+                                src_port: udp_packet.get_source(),
+                                dst_ip: ipv4_packet.get_destination().to_string(),
+                                dst_port: udp_packet.get_destination(),
+                                protocol: "UDP".to_string(),
+                                packet_size: packet.len() as u32,
+                                flags: "".to_string(),
+                            },
+                        })
+                    }
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    }
+
+    async fn start_file_watcher(&self, sender: mpsc::Sender<DataEvent>) -> Result<task::JoinHandle<()>> {
+        use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+        
+        let monitor_dir = self.config.monitor_dir.clone();
+        let config = self.config.clone();
+        
+        let handle = task::spawn(async move {
+            let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+            
+            let mut watcher: RecommendedWatcher = Watcher::new(
+                move |res: Result<Event, _>| {
+                    if let Ok(event) = res {
+                        let _ = tx.blocking_send(event);
+                    }
+                },
+                notify::Config::default(),
+            ).unwrap();
+
+            watcher.watch(&monitor_dir, RecursiveMode::Recursive).unwrap();
+
+            while let Some(event) = rx.recv().await {
+                if let Some(file_event) = Self::process_file_event(event, &config) {
+                    if let Err(e) = sender.send(file_event).await {
+                        error!("Failed to send file event: {}", e);
+                    }
+                }
+            }
+        });
+
+        Ok(handle)
+    }
+
+    fn process_file_event(event: notify::Event, config: &CollectorConfig) -> Option<DataEvent> {
+        let path = event.paths.first()?.clone();
+        let operation = match event.kind {
+            EventKind::Create(_) => "create",
+            EventKind::Modify(_) => "modify",
+            EventKind::Remove(_) => "delete",
+            EventKind::Access(_) => "access",
+            _ => return None,
+        };
+
+        // Get file size if file exists
+        let size = std::fs::metadata(&path).ok()?.len();
+
+        // Get file hash if it's a regular file
+        let hash = if path.is_file() {
+            Self::calculate_file_hash(&path).ok()
+        } else {
+            None
+        };
+
+        Some(DataEvent {
+            event_id: Uuid::new_v4(),
+            event_type: "file".to_string(),
+            timestamp: Utc::now(),
+            data: EventData::File {
+                path: path.to_string_lossy().to_string(),
+                operation: operation.to_string(),
+                size,
+                process_id: 0, // Would need to get from system
+                hash,
+            },
+        })
+    }
+
+    fn calculate_file_hash(path: &std::path::Path) -> Result<String> {
+        use std::io::Read;
+        use sha2::{Digest, Sha256};
+        
+        let mut file = std::fs::File::open(path)?;
+        let mut hasher = Sha256::new();
+        let mut buffer = [0; 4096];
+        
+        loop {
+            let bytes_read = file.read(&mut buffer)?;
+            if bytes_read == 0 {
+                break;
+            }
+            hasher.update(&buffer[..bytes_read]);
+        }
+        
+        Ok(format!("{:x}", hasher.finalize()))
+    }
+
+    async fn collect_process_events(&self, sender: &mpsc::Sender<DataEvent>) -> Result<()> {
+        let mut system = sysinfo::System::new_all();
+        system.refresh_all();
+
+        for (pid, process) in system.processes() {
             let event_data = EventData::Process {
                 pid: pid.as_u32(),
                 name: process.name().to_string(),
@@ -88,26 +325,14 @@ impl DataCollector {
         Ok(())
     }
 
-    async fn collect_network_events(&self, sender: &mpsc::Sender<DataEvent>) -> Result<()> {
-        // Implementation for network event collection
-        // This would use pnet or similar crate to capture network packets
-        Ok(())
-    }
-
-    async fn collect_file_events(&self, sender: &mpsc::Sender<DataEvent>) -> Result<()> {
-        // Implementation for file event collection
-        // This would use notify crate to monitor file system changes
-        Ok(())
-    }
-
     async fn collect_gpu_events(&self, sender: &mpsc::Sender<DataEvent>) -> Result<()> {
-        // Implementation for GPU event collection
-        // This would use GPU monitoring libraries
+        // Implementation for GPU monitoring
+        // This would use GPU-specific libraries like nvml for NVIDIA GPUs
         Ok(())
     }
 
     async fn collect_feedback_events(&self, sender: &mpsc::Sender<DataEvent>) -> Result<()> {
-        // Implementation for feedback event collection
+        // Implementation for feedback events
         Ok(())
     }
 
@@ -132,7 +357,6 @@ impl DataCollector {
             debug!("Processing batch of {} events", batch.len());
             
             // Here we would extract features and run anomaly detection
-            // For now, we'll just log the events
             for event in batch {
                 if let Err(e) = sender.send(event).await {
                     error!("Failed to send batched event: {}", e);
@@ -141,6 +365,19 @@ impl DataCollector {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(target_os = "windows")]
+struct EtwSession {
+    // ETW session implementation would go here
+}
+
+#[cfg(target_os = "windows")]
+impl EtwSession {
+    fn new(providers: &[crate::config::EtwProvider]) -> Result<Self> {
+        // Initialize ETW session with providers
+        Ok(EtwSession {})
     }
 }
 
