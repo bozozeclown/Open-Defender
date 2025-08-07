@@ -1,0 +1,120 @@
+# config/development.yaml
+app:
+  environment: "development"
+  debug: true
+  log_level: "debug"
+  
+database:
+  max_connections: 5
+  min_connections: 2
+  pool_timeout: 10
+  ssl_mode: "disable"
+  connection_validation:
+    enabled: false
+    interval: 300
+    query: "SELECT 1"
+  
+analytics:
+  event_buffer_size: 1000
+  port_scan_threshold: 20
+  data_exfiltration_threshold: 1048576  # 1MB
+  suspicious_processes: "powershell.exe,cmd.exe,wscript.exe,cscript.exe,rundll32.exe,regsvr32.exe"
+  system_metrics_interval: 30
+  batch_processing:
+    enabled: false
+    batch_size: 100
+    flush_interval: 10
+    
+security:
+  allowed_hosts: "*"
+  tls:
+    enabled: false
+    cert_path: ""
+    key_path: ""
+  authentication:
+    jwt_expiry_hours: 168  # 7 days for development
+    refresh_token_expiry_hours: 720  # 30 days
+    mfa_enabled: false
+    max_login_attempts: 10
+    lockout_duration_minutes: 5
+    password_policy:
+      min_length: 8
+      require_uppercase: false
+      require_lowercase: false
+      require_numbers: false
+      require_special_chars: false
+      prevent_reuse: 0
+      expiry_days: 0
+  authorization:
+    rbac_enabled: false
+    default_role: "admin"
+    session_timeout: 7200  # 2 hours
+  encryption:
+    enabled: false
+  cors:
+    allowed_origins: ["*"]
+    allowed_methods: ["*"]
+    allowed_headers: ["*"]
+    allow_credentials: true
+    max_age_seconds: 3600
+  
+observability:
+  log_level: "debug"
+  enable_tracing: true
+  tracing_sampling_rate: 1.0  # 100% sampling in development
+  metrics:
+    enabled: true
+    retention_days: 7
+    aggregation_interval: 5
+  jaeger:
+    endpoint: "localhost:6831"
+    service_name: "security-monitoring-dev"
+  prometheus:
+    endpoint: "localhost:9090"
+    namespace: "security_monitoring_dev"
+  
+monitoring:
+  prometheus_scrape_interval: 10
+  alertmanager_url: ""
+  health_check:
+    enabled: true
+    interval: 15
+    timeout: 5
+    retries: 2
+  alerts:
+    enabled: false
+    
+deployment:
+  health_check_interval: 15
+  graceful_shutdown_timeout: 10
+  auto_scaling:
+    enabled: false
+    min_replicas: 1
+    max_replicas: 3
+    target_cpu_utilization: 80
+    target_memory_utilization: 90
+    
+performance:
+  caching:
+    enabled: true
+    ttl: 60  # 1 minute
+    max_size: 1000
+  connection_pooling:
+    enabled: true
+    max_idle_connections: 5
+    max_lifetime: 3600  # 1 hour
+  compression:
+    enabled: false
+    
+backup:
+  enabled: false
+  
+development:
+  hot_reload: true
+  debug_port: 5858
+  profiler_enabled: true
+  test_data: true
+  mock_services:
+    enabled: true
+    delay_ms: 100
+    error_rate: 0.05  # 5% error rate for testing

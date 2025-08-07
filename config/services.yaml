@@ -1,0 +1,294 @@
+# config/services.yaml
+services:
+  database:
+    name: "postgres"
+    port: 5432
+    health_check:
+      path: "/health"
+      interval: 10
+      timeout: 5
+      retries: 3
+      success_threshold: 1
+      failure_threshold: 3
+    connection_pool:
+      max_connections: 20
+      min_connections: 5
+      max_idle_connections: 10
+      connection_timeout: 30
+      idle_timeout: 300
+      max_lifetime: 3600
+    ssl:
+      enabled: true
+      mode: "require"
+      cert_path: "/etc/ssl/certs/postgresql.crt"
+      key_path: "/etc/ssl/private/postgresql.key"
+    backup:
+      enabled: true
+      schedule: "0 2 * * *"
+      retention: 30
+      compression: true
+      encryption: true
+    monitoring:
+      enabled: true
+      exporter_port: 9187
+      metrics_path: "/metrics"
+    read_replicas:
+      - host: "postgres-replica1"
+        port: 5433
+        weight: 1
+      - host: "postgres-replica2"
+        port: 5434
+        weight: 1
+        
+  cache:
+    name: "redis"
+    port: 6379
+    health_check:
+      command: "PING"
+      interval: 10
+      timeout: 3
+      retries: 3
+      success_threshold: 1
+      failure_threshold: 3
+    auth:
+      enabled: true
+      password_file: "/run/secrets/redis_password"
+    persistence:
+      enabled: true
+      mode: "aof"
+      appendfsync: "everysec"
+    memory:
+      max_memory: "1gb"
+      policy: "allkeys-lru"
+    monitoring:
+      enabled: true
+      exporter_port: 9121
+      metrics_path: "/metrics"
+    clustering:
+      enabled: false
+      nodes: []
+      
+  application:
+    name: "security-monitoring"
+    ports:
+      graphql: 8000
+      websocket: 8001
+      metrics: 9090
+      health: 8080
+      debug: 5858
+    health_check:
+      path: "/health"
+      interval: 30
+      timeout: 10
+      retries: 3
+      success_threshold: 1
+      failure_threshold: 3
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+    scaling:
+      min_replicas: 3
+      max_replicas: 10
+      target_cpu_utilization: 70
+      target_memory_utilization: 80
+    security:
+      run_as_non_root: true
+      read_only_filesystem: true
+      capabilities:
+        drop: ["ALL"]
+        add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+    env_vars:
+      - name: "RUST_LOG"
+        value: "info"
+      - name: "ENVIRONMENT"
+        value: "production"
+    volumes:
+      - name: "config"
+        path: "/app/config"
+        type: "configMap"
+      - name: "certs"
+        path: "/app/certs"
+        type: "secret"
+      - name: "logs"
+        path: "/var/log/security-monitoring"
+        type: "emptyDir"
+        
+  monitoring:
+    prometheus:
+      name: "prometheus"
+      port: 9091
+      path: "/metrics"
+      retention: "30d"
+      storage_size: "10Gi"
+      scrape_interval: "15s"
+      evaluation_interval: "15s"
+      alertmanager_url: "alertmanager:9093"
+      external_labels:
+        cluster: "security-monitoring"
+        environment: "production"
+    grafana:
+      name: "grafana"
+      port: 3000
+      admin_password_file: "/run/secrets/grafana_password"
+      storage_size: "5Gi"
+      plugins:
+        - "grafana-clock-panel"
+        - "grafana-simple-json-datasource"
+        - "grafana-piechart-panel"
+      dashboards:
+        - name: "system-metrics"
+          path: "/etc/grafana/dashboards/system-metrics.json"
+        - name: "security-events"
+          path: "/etc/grafana/dashboards/security-events.json"
+        - name: "performance"
+          path: "/etc/grafana/dashboards/performance.json"
+    jaeger:
+      name: "jaeger"
+      ports:
+        ui: 16686
+        collector: 14268
+        agent: 6831
+      storage:
+        type: "elasticsearch"
+        size: "20Gi"
+      sampling:
+        type: "probabilistic"
+        param: 0.1
+    alertmanager:
+      name: "alertmanager"
+      port: 9093
+      config_file: "/etc/alertmanager/alertmanager.yml"
+      storage_size: "1Gi"
+      retention: "120h"
+      
+  security:
+    vault:
+      name: "vault"
+      port: 8200
+      storage:
+        type: "file"
+        path: "/vault/file"
+      listener:
+        tcp:
+          address: "0.0.0.0:8200"
+          tls_disable: false
+      ui: true
+      dev_root_token_id: "${VAULT_TOKEN}"
+    oauth_proxy:
+      name: "oauth-proxy"
+      port: 4180
+      provider: "oidc"
+      client_id: "${OAUTH_CLIENT_ID}"
+      client_secret: "${OAUTH_CLIENT_SECRET}"
+      cookie_secret: "${OAUTH_COOKIE_SECRET}"
+      upstream: "http://security-monitoring-service:8000"
+      
+  ingress:
+    name: "nginx"
+    ports:
+      http: 80
+      https: 443
+    ssl:
+      enabled: true
+      cert_path: "/etc/nginx/certs/tls.crt"
+      key_path: "/etc/nginx/certs/tls.key"
+    rate_limiting:
+      enabled: true
+      connections: 100
+      rps: 50
+      burst: 100
+    security_headers:
+      enabled: true
+      csp: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' wss:; frame-ancestors 'none';"
+      hsts: "max-age=31536000; includeSubDomains; preload"
+      x_frame_options: "DENY"
+      x_content_type_options: "nosniff"
+      x_xss_protection: "1; mode=block"
+      referrer_policy: "strict-origin-when-cross-origin"
+
+networks:
+  frontend:
+    name: "security-frontend"
+    driver: "bridge"
+    subnet: "172.21.0.0/24"
+    services: ["application", "ingress"]
+    internal: false
+    attachable: true
+    
+  backend:
+    name: "security-backend"
+    driver: "bridge"
+    subnet: "172.20.0.0/24"
+    services: ["database", "cache", "application", "security"]
+    internal: true
+    attachable: true
+    
+  monitoring:
+    name: "security-monitoring"
+    driver: "bridge"
+    subnet: "172.22.0.0/24"
+    services: ["application", "monitoring.*"]
+    internal: false
+    attachable: true
+    
+  storage:
+    name: "security-storage"
+    driver: "bridge"
+    subnet: "172.23.0.0/24"
+    services: ["database", "cache", "monitoring.prometheus", "monitoring.grafana", "monitoring.jaeger"]
+    internal: true
+    attachable: true
+
+# Service Dependencies
+dependencies:
+  application:
+    depends_on:
+      - service: "database"
+        condition: "service_healthy"
+      - service: "cache"
+        condition: "service_healthy"
+      - service: "security.vault"
+        condition: "service_healthy"
+      
+  monitoring:
+    prometheus:
+      depends_on:
+        - service: "application"
+          condition: "service_started"
+    grafana:
+      depends_on:
+        - service: "monitoring.prometheus"
+          condition: "service_started"
+    jaeger:
+      depends_on:
+        - service: "application"
+          condition: "service_started"
+          
+  ingress:
+    depends_on:
+      - service: "application"
+        condition: "service_healthy"
+      - service: "monitoring.grafana"
+        condition: "service_healthy"
+      - service: "monitoring.jaeger"
+        condition: "service_healthy"
+
+# Service Discovery
+discovery:
+  enabled: true
+  method: "dns"
+  dns:
+    domain: "security-monitoring.local"
+    search_domains:
+      - "security-monitoring.local"
+      - "security-backend"
+      - "security-monitoring"
+  health_checks:
+    enabled: true
+    interval: 30
+    timeout: 5
+    retries: 3

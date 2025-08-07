@@ -1,0 +1,87 @@
+# config/config.yaml
+app:
+  name: "security-monitoring"
+  version: "0.1.0"
+  environment: "${ENVIRONMENT:-development}"
+  
+database:
+  url: "${DATABASE_URL}"
+  max_connections: "${DB_MAX_CONNECTIONS:-10}"
+  min_connections: "${DB_MIN_CONNECTIONS:-5}"
+  pool_timeout: 30
+  ssl_mode: "${DB_SSL_MODE:-prefer}"
+  read_replicas: "${DB_READ_REPLICAS:-}"
+  failover_timeout: "${DB_FAILOVER_TIMEOUT:-10}"
+  validation_query: "SELECT 1"
+  validation_interval: 60
+  
+analytics:
+  event_buffer_size: "${EVENT_BUFFER_SIZE:-10000}"
+  port_scan_threshold: "${PORT_SCAN_THRESHOLD:-50}"
+  data_exfiltration_threshold: "${DATA_EXFILTRATION_THRESHOLD:-10485760}"
+  suspicious_processes: "${SUSPICIOUS_PROCESSES:-powershell.exe,cmd.exe,wscript.exe,cscript.exe,rundll32.exe,regsvr32.exe}"
+  system_metrics_interval: "${SYSTEM_METRICS_INTERVAL:-60}"
+  
+api:
+  graphql_endpoint: "${GRAPHQL_ENDPOINT:-127.0.0.1:8000}"
+  cors_origins: "${CORS_ORIGINS:-http://localhost:3000}"
+  jwt_secret: "${JWT_SECRET}"
+  jwt_expiry_hours: "${JWT_EXPIRY_HOURS:-24}"
+  rate_limit: "${API_RATE_LIMIT:-100}"
+  
+collaboration:
+  websocket_endpoint: "${WEBSOCKET_ENDPOINT:-127.0.0.1:8001}"
+  redis_url: "${REDIS_URL}"
+  
+observability:
+  log_level: "${RUST_LOG:-info}"
+  jaeger_endpoint: "${JAEGER_ENDPOINT:-localhost:6831}"
+  metrics_endpoint: "${METRICS_ENDPOINT:-localhost:9090}"
+  enable_tracing: "${ENABLE_TRACING:-false}"
+  enable_metrics: "${ENABLE_METRICS:-true}"
+  
+security:
+  tls_cert_path: "${TLS_CERT_PATH:-/etc/ssl/certs/server.crt}"
+  tls_key_path: "${TLS_KEY_PATH:-/etc/ssl/private/server.key}"
+  allowed_hosts: "${ALLOWED_HOSTS:-}"  # Force explicit setting
+  allowed_origins: "${ALLOWED_ORIGINS:-https://security.yourdomain.com}"
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 60
+    burst_size: 10
+    by_ip: true
+    by_user: true
+  cors:
+    allowed_origins: ["${CORS_ORIGINS:-https://security.yourdomain.com}"]
+    allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allowed_headers: ["Content-Type", "Authorization"]
+    allow_credentials: true
+    max_age_seconds: 3600
+  tls:
+    enabled: true
+    min_version: "TLSv1.2"
+    cipher_suites: ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"]
+  audit:
+    enabled: true
+    log_security_events: true
+    log_auth_events: true
+    log_data_access: true
+    retention_days: 365
+    sensitive_data_masking: true
+  
+monitoring:
+  prometheus_scrape_interval: "${PROMETHEUS_SCRAPE_INTERVAL:-15}"
+  alertmanager_url: "${ALERTMANAGER_URL}"
+  
+deployment:
+  health_check_interval: "${HEALTH_CHECK_INTERVAL:-30}"
+  graceful_shutdown_timeout: "${GRACEFUL_SHUTDOWN_TIMEOUT:-30}"
+  
+validation:
+  required:
+    - "security.tls_cert_path"
+    - "security.tls_key_path"
+    - "database.url"
+  patterns:
+    database.url: "^postgres://.+"
+    security.allowed_hosts: "^[a-zA-Z0-9.-]+$"

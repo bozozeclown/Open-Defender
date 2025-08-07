@@ -1,0 +1,240 @@
+# config/ports.yaml
+ports:
+  # Application Ports
+  application:
+    graphql: 8000
+    websocket: 8001
+    metrics: 9090
+    health: 8080
+    debug: 5858
+    
+  # Database Ports
+  database:
+    postgres: 5432
+    postgres_exporter: 9187
+    postgres_read_replica1: 5433
+    postgres_read_replica2: 5434
+    
+  # Cache Ports
+  cache:
+    redis: 6379
+    redis_exporter: 9121
+    
+  # Monitoring Ports
+  monitoring:
+    prometheus_ui: 9091
+    prometheus_metrics: 9090
+    grafana: 3000
+    jaeger_ui: 16686
+    jaeger_collector_http: 14268
+    jaeger_collector_udp: 6831
+    node_exporter: 9100
+    cadvisor: 8080
+    alertmanager: 9093
+    
+  # Security Ports
+  security:
+    vault: 8200
+    oauth_proxy: 4180
+    
+  # Development Ports
+  development:
+    debug: 5858
+    hot_reload: 35729
+    profiler: 6060
+    
+  # External Access Ports
+  external:
+    https: 443
+    http: 80
+    ssh: 22
+    vpn: 1194
+
+# Port Mappings for Different Environments
+environments:
+  development:
+    host_ports:
+      application:
+        graphql: 8000
+        websocket: 8001
+        metrics: 9090
+        health: 8080
+        debug: 5858
+      database:
+        postgres: 5432
+        postgres_exporter: 9187
+      cache:
+        redis: 6379
+        redis_exporter: 9121
+      monitoring:
+        prometheus_ui: 9091
+        prometheus_metrics: 9090
+        grafana: 3000
+        jaeger_ui: 16686
+        node_exporter: 9100
+        cadvisor: 8080
+      security:
+        vault: 8200
+        oauth_proxy: 4180
+      development:
+        debug: 5858
+        hot_reload: 35729
+        profiler: 6060
+        
+  production:
+    host_ports:
+      application:
+        graphql: 443  # Will be handled by ingress
+        websocket: 443  # Will be handled by ingress
+        metrics: 9090
+        health: 8080
+      database:
+        postgres: 5432  # Internal only
+        postgres_exporter: 9187  # Internal only
+        postgres_read_replica1: 5433  # Internal only
+        postgres_read_replica2: 5434  # Internal only
+      cache:
+        redis: 6379  # Internal only
+        redis_exporter: 9121  # Internal only
+      monitoring:
+        prometheus_ui: 9091
+        prometheus_metrics: 9090
+        grafana: 3000
+        jaeger_ui: 16686
+        node_exporter: 9100
+        cadvisor: 8080
+        alertmanager: 9093
+      security:
+        vault: 8200  # Internal only
+        oauth_proxy: 4180  # Internal only
+
+# Port Security Settings
+security:
+  # Ports that should not be exposed externally
+  internal_only:
+    - database.postgres
+    - database.postgres_exporter
+    - database.postgres_read_replica1
+    - database.postgres_read_replica2
+    - cache.redis
+    - cache.redis_exporter
+    - monitoring.node_exporter
+    - monitoring.cadvisor
+    - security.vault
+    - security.oauth_proxy
+    - development.debug
+    - development.hot_reload
+    - development.profiler
+    
+  # Ports that require authentication
+  auth_required:
+    - application.metrics
+    - monitoring.prometheus_metrics
+    - monitoring.grafana
+    - monitoring.jaeger_ui
+    
+  # Ports that should use HTTPS
+  https_only:
+    - application.graphql
+    - application.websocket
+    - monitoring.grafana
+    - monitoring.jaeger_ui
+    
+  # Ports that should be rate limited
+  rate_limited:
+    - application.graphql
+    - application.websocket
+    - application.metrics
+    
+  # Port access control lists
+  acls:
+    - port: application.graphql
+      allowed_ips: []
+      allowed_networks: []
+    - port: application.websocket
+      allowed_ips: []
+      allowed_networks: []
+    - port: application.metrics
+      allowed_ips: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+      allowed_networks: []
+    - port: monitoring.grafana
+      allowed_ips: []
+      allowed_networks: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+    - port: monitoring.jaeger_ui
+      allowed_ips: []
+      allowed_networks: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+
+# Port Health Checks
+health_checks:
+  - port: application.health
+    path: "/health"
+    interval: 30
+    timeout: 5
+    retries: 3
+  - port: database.postgres
+    command: "pg_isready -U postgres"
+    interval: 10
+    timeout: 5
+    retries: 3
+  - port: cache.redis
+    command: "redis-cli ping"
+    interval: 10
+    timeout: 3
+    retries: 3
+  - port: monitoring.prometheus_ui
+    path: "/-/healthy"
+    interval: 30
+    timeout: 10
+    retries: 3
+  - port: monitoring.grafana
+    path: "/api/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+  - port: security.vault
+    path: "/v1/sys/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+
+# Port Validation Rules
+validation:
+  # Port ranges that are allowed
+  allowed_ranges:
+    - min: 1024
+      max: 65535
+    - min: 80
+      max: 80
+    - min: 443
+      max: 443
+    - min: 22
+      max: 22
+      
+  # Reserved ports that should not be used
+  reserved_ports:
+    - 21    # FTP
+    - 23    # Telnet
+    - 25    # SMTP
+    - 53    # DNS
+    - 135   # Windows RPC
+    - 137   # NetBIOS
+    - 138   # NetBIOS
+    - 139   # NetBIOS
+    - 445   # SMB
+    - 1433  # MS SQL Server
+    - 1434  # MS SQL Monitor
+    - 1521  # Oracle DB
+    - 3306  # MySQL
+    - 3389  # RDP
+    - 5432  # PostgreSQL (allowed for internal use)
+    - 5900  # VNC
+    - 6379  # Redis (allowed for internal use)
+    
+  # Port conflicts to check
+  conflict_rules:
+    - port1: application.graphql
+      port2: monitoring.prometheus_metrics
+      error: "GraphQL API and Prometheus metrics cannot use the same port"
+    - port1: application.websocket
+      port2: application.graphql
+      error: "WebSocket and GraphQL API cannot use the same port"

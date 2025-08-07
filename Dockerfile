@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
+# Install security scanner
+RUN cargo install cargo-audit
+
 # Set working directory
 WORKDIR /app
 
@@ -30,6 +33,9 @@ COPY src ./src
 COPY rustcore/src ./rustcore/src
 COPY exploit_detector/src ./exploit_detector/src
 
+# Run security audit
+RUN cargo audit
+
 # Build the Rust application
 RUN cargo build --release
 
@@ -48,7 +54,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install maturin for building Python extensions
-RUN pip install maturin
+RUN pip install maturin==1.3.0
 
 # Set working directory
 WORKDIR /app
@@ -56,7 +62,8 @@ WORKDIR /app
 # Copy Cargo files and pyproject.toml for Python extension
 COPY Cargo.toml Cargo.lock ./
 COPY rustcore/Cargo.toml ./rustcore/
-COPY pyproject.toml ./
+COPY rustcore/requirements.txt ./
+RUN pip install -r requirements.txt
 
 # Create dummy source files for dependencies
 RUN mkdir -p rustcore/src
@@ -98,7 +105,7 @@ RUN pip install *.whl
 COPY src/.env.example .env
 
 # Create directories
-RUN mkdir -p /var/lib/security-monitoring /var/log/security-monitoring
+RUN mkdir -p /var/lib/security-monitoring /var/log/security-monitoring /app/config
 
 # Set permissions
 RUN chown -R security:security /app /var/lib/security-monitoring /var/log/security-monitoring

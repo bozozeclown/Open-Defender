@@ -10,6 +10,17 @@ data:
   database-password: <base64-encoded-db-password>
   redis-password: <base64-encoded-redis-password>
   vault-token: <base64-encoded-vault-token>
+  grafana-password: <base64-encoded-grafana-password>
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: security-monitoring-certs
+  namespace: security-monitoring
+type: kubernetes.io/tls
+data:
+  tls.crt: <base64-encoded-tls-certificate>
+  tls.key: <base64-encoded-tls-private-key>
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -36,11 +47,12 @@ data:
     authorization:
       rbac_enabled: true
       default_role: "viewer"
+      session_timeout: 3600
     encryption:
       enabled: true
       algorithm: "AES-256-GCM"
       key_rotation_days: 90
-      sensitive_fields: ["password", "token", "secret", "key"]
+      sensitive_fields: ["password", "token", "secret", "key", "credential"]
     network:
       allowed_origins: ["https://security.yourdomain.com"]
       rate_limiting:
@@ -69,29 +81,72 @@ data:
     secrets:
       provider: "vault"
 ---
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
+apiVersion: policy/v1
+kind: PodDisruptionBudget
 metadata:
-  name: security-monitoring-psp
+  name: security-monitoring-pdb
   namespace: security-monitoring
 spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  requiredDropCapabilities:
-    - ALL
-  volumes:
-    - 'configMap'
-    - 'emptyDir'
-    - 'projected'
-    - 'secret'
-    - 'downwardAPI'
-    - 'persistentVolumeClaim'
-  runAsUser:
-    rule: 'MustRunAsNonRoot'
-  seLinux:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'RunAsAny'
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: security-monitoring
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: security-monitoring-netpol
+  namespace: security-monitoring
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: security-monitoring
+    - podSelector:
+        matchLabels:
+          app: nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 8001
+    - protocol: TCP
+      port: 9090
+  egress:
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 8200
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: security-monitoring-sa
+  namespace: security-monitoring
+  annotations:
+    iam.amazonaws.com/role: security-monitoring-role
+automountServiceAccountToken: false
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -100,10 +155,16 @@ metadata:
   namespace: security-monitoring
 rules:
 - apiGroups: [""]
-  resources: ["pods", "services", "configmaps", "secrets"]
+  resources: ["pods", "services", "configmaps", "secrets", "endpoints"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["apps"]
-  resources: ["deployments"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["policy"]
+  resources: ["poddisruptionbudgets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["networkpolicies"]
   verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -121,7 +182,19 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
-kind: ServiceAccount
+kind: ResourceQuota
 metadata:
-  name: security-monitoring-sa
+  name: security-monitoring-quota
   namespace: security-monitoring
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    persistentvolumeclaims: "5"
+    requests.storage: 100Gi
+    count/deployments.apps: "10"
+    count/pods: "20"
+    count/services: "10"
+    count/secrets: "20"

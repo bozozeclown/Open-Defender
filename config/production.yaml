@@ -1,0 +1,139 @@
+# config/production.yaml
+app:
+  environment: "production"
+  debug: false
+  
+database:
+  max_connections: 20
+  min_connections: 10
+  pool_timeout: 30
+  ssl_mode: "require"
+  failover_timeout: 10
+  read_replicas: "postgres-replica1:5432,postgres-replica2:5432"
+  connection_validation:
+    enabled: true
+    interval: 60
+    query: "SELECT 1"
+  
+analytics:
+  event_buffer_size: 50000
+  port_scan_threshold: 50
+  data_exfiltration_threshold: 10485760  # 10MB
+  suspicious_processes: "powershell.exe,cmd.exe,wscript.exe,cscript.exe,rundll32.exe,regsvr32.exe"
+  system_metrics_interval: 60
+  batch_processing:
+    enabled: true
+    batch_size: 1000
+    flush_interval: 5
+    
+security:
+  allowed_hosts: "security.yourdomain.com"
+  tls:
+    cert_path: "/etc/ssl/certs/server.crt"
+    key_path: "/etc/ssl/private/server.key"
+    min_version: "TLSv1.2"
+    cipher_suites:
+      - "TLS_AES_128_GCM_SHA256"
+      - "TLS_AES_256_GCM_SHA384"
+  authentication:
+    jwt_expiry_hours: 24
+    refresh_token_expiry_hours: 168
+    mfa_enabled: true
+    max_login_attempts: 5
+    lockout_duration_minutes: 15
+    password_policy:
+      min_length: 12
+      require_uppercase: true
+      require_lowercase: true
+      require_numbers: true
+      require_special_chars: true
+      prevent_reuse: 5
+      expiry_days: 90
+  authorization:
+    rbac_enabled: true
+    default_role: "viewer"
+    session_timeout: 3600  # 1 hour
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_rotation_days: 90
+    sensitive_fields:
+      - "password"
+      - "token"
+      - "secret"
+      - "key"
+      - "credential"
+  
+observability:
+  log_level: "info"
+  enable_tracing: true
+  tracing_sampling_rate: 0.1  # 10% sampling
+  metrics:
+    enabled: true
+    retention_days: 30
+    aggregation_interval: 15
+  jaeger:
+    endpoint: "jaeger:6831"
+    service_name: "security-monitoring"
+  prometheus:
+    endpoint: "prometheus:9090"
+    namespace: "security_monitoring"
+  
+monitoring:
+  prometheus_scrape_interval: 15
+  alertmanager_url: "alertmanager:9093"
+  health_check:
+    enabled: true
+    interval: 30
+    timeout: 10
+    retries: 3
+  alerts:
+    enabled: true
+    channels:
+      - email
+      - slack
+    severity_levels:
+      critical:
+        escalation_delay: 15  # minutes
+      warning:
+        escalation_delay: 60  # minutes
+      
+deployment:
+  health_check_interval: 30
+  graceful_shutdown_timeout: 30
+  auto_scaling:
+    enabled: true
+    min_replicas: 3
+    max_replicas: 10
+    target_cpu_utilization: 70
+    target_memory_utilization: 80
+  rolling_update:
+    max_unavailable: 1
+    max_surge: 1
+    
+performance:
+  caching:
+    enabled: true
+    ttl: 300  # 5 minutes
+    max_size: 10000
+  connection_pooling:
+    enabled: true
+    max_idle_connections: 10
+    max_lifetime: 1800  # 30 minutes
+  compression:
+    enabled: true
+    level: 6
+    min_size: 1024  # 1KB
+    
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention_days: 30
+  compression: true
+  encryption: true
+  destinations:
+    - type: "s3"
+      bucket: "security-backups"
+      region: "us-east-1"
+    - type: "local"
+      path: "/backups"

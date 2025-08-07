@@ -1,0 +1,183 @@
+# k8s/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: security-monitoring
+  labels:
+    app: postgres
+    tier: database
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: postgres
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: security-monitoring
+  labels:
+    app: redis
+    tier: cache
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+  selector:
+    app: redis
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: security-monitoring-service
+  namespace: security-monitoring
+  labels:
+    app: security-monitoring
+    tier: backend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: "ELBSecurityPolicy-TLS13-1-2-2021-06"
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8000
+    protocol: TCP
+  - name: websocket
+    port: 8001
+    targetPort: 8001
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app: security-monitoring
+  type: LoadBalancer
+  sessionAffinity: None
+  externalTrafficPolicy: Local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: security-monitoring-metrics
+  namespace: security-monitoring
+  labels:
+    app: security-monitoring
+    tier: backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+    prometheus.io/path: "/metrics"
+spec:
+  ports:
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app: security-monitoring
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  namespace: security-monitoring
+  labels:
+    app: vault
+    tier: security
+spec:
+  ports:
+  - name: http
+    port: 8200
+    targetPort: 8200
+    protocol: TCP
+  selector:
+    app: vault
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: security-monitoring
+  labels:
+    app: prometheus
+    tier: monitoring
+spec:
+  ports:
+  - name: web
+    port: 9091
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app: prometheus
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: security-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+spec:
+  ports:
+  - name: web
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: grafana
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  namespace: security-monitoring
+  labels:
+    app: jaeger
+    tier: monitoring
+spec:
+  ports:
+  - name: query
+    port: 16686
+    targetPort: 16686
+    protocol: TCP
+  - name: collector
+    port: 14268
+    targetPort: 14268
+    protocol: TCP
+  - name: agent
+    port: 6831
+    targetPort: 6831
+    protocol: UDP
+  selector:
+    app: jaeger
+  type: ClusterIP
+  sessionAffinity: None

@@ -1,0 +1,51 @@
+# k8s/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: security-monitoring
+  labels:
+    name: security-monitoring
+    environment: production
+    app.kubernetes.io/name: security-monitoring
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/version: "0.1.0"
+    security.openshift.io/scc.podSecurityLabelSync: "false"
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: v1.24
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: v1.24
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: v1.24
+  annotations:
+    description: "Namespace for Security Monitoring System"
+    owner: "security-team"
+    created: "2023-01-01T00:00:00Z"
+    contact: "security-team@example.com"
+    cost-center: "engineering"
+    compliance: "SOC2, ISO27001"
+    backup: "enabled"
+    monitoring: "enabled"
+    logging: "enabled"
+    networking.kubernetes.io/service.beta.kubernetes.io/loadbalancer-type: "nlb"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: "ELBSecurityPolicy-TLS13-1-2-2021-06"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-target-type: "ip"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "HTTPS"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/health"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "8080"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "30"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "10"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-healthcheck-success-threshold: "3"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-eip-allocations: ""
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "Environment=production,Team=security"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "security-monitoring-logs"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "elb"
+    networking.kubernetes.io/service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "60"
