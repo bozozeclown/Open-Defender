@@ -1,15 +1,14 @@
-// Cargo.toml
 [workspace]
 members = [
-    "exploit_detector",
-    "rustcore",
-    "collectors",
-    "analytics",
+    "",
+    #"rustcore",
+    #"collectors",
+    # "analytics",
 ]
-default-members = ["exploit_detector"]
+default-members = [""]
 
 [package]
-name = "exploit_detector"
+name = "open_defender"
 version = "0.1.0"
 edition = "2021"
 
@@ -23,14 +22,13 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1.0"
 thiserror = "1.0"
 uuid = { version = "1.3", features = ["v4"] }
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde", "clock"] }
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite", "chrono"] }
 clap = { version = "4.3", features = ["derive"] }
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
 notify = "6.0"
 sysinfo = "0.29"
 pnet = "0.33"
-tch = "0.15"
 ndarray = "0.15"
 linfa = "0.7"
 linfa-clustering = "0.7"
@@ -41,20 +39,19 @@ reqwest = { version = "0.11", features = ["json"] }
 lru = "0.10"
 base64 = "0.21"
 ring = "0.17"
-# New dependencies
-rayon = "1.10"
 prometheus = "0.13"
 jwt = "0.16"
 hmac = "0.12"
 sha2 = "0.10"
 async-trait = "0.1"
 config = "0.14"
-pyo3 = { version = "0.20", features = ["extension-module"] }
+pyo3 = { version = "0.24.1", features = ["extension-module"] }
 rayon = "1.10"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-
 
 [lib]
 name = "rustcore"
 crate-type = ["cdylib"]
+
+[[bench]]
+name = "detection_benchmark"
+harness = false

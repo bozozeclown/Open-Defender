@@ -1,8 +1,8 @@
-use exploit_detector::analytics::detection::AdvancedDetectionEngine;
-use exploit_detector::cache::DetectionCache;
-use exploit_detector::collectors::DataEvent;
-use exploit_detector::config::AppConfig;
-use exploit_detector::database::DatabaseManager;
+use crate::analytics::detection::AdvancedDetectionEngine;
+use crate::cache::DetectionCache;
+use crate::collectors::DataEvent;
+use crate::config::AppConfig;
+use crate::database::DatabaseManager;
 use sqlx::postgres::PgPoolOptions;
 
 #[tokio::test]
@@ -34,7 +34,7 @@ async fn test_full_detection_pipeline() {
         timestamp: chrono::Utc::now(),
         event_type: "network".to_string(),
         source: "test".to_string(),
-        data: exploit_detector::collectors::EventData::Network {
+        data: crate::collectors::EventData::Network {
             src_ip: "192.168.1.100".to_string(),
             dst_ip: "10.0.0.1".to_string(),
             src_port: 12345,

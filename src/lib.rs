@@ -13,9 +13,9 @@ pub mod integrations;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use exploit_detector::controllers::MainController;
-use exploit_detector::utils::database::DatabaseManager;
-use exploit_detector::utils::telemetry::TelemetryManager;
+use crate::controllers::MainController;
+use crate::utils::database::DatabaseManager;
+use crate::utils::telemetry::TelemetryManager;
 use std::sync::Arc;
 use tokio::signal;
 use tracing::{error, info, level_filters::LevelFilter};
@@ -85,35 +85,35 @@ async fn main() -> Result<()> {
     }
 
     // Load configuration
-    let config = exploit_detector::config::Config::load(&args.config)
+    let config = crate::config::Config::load(&args.config)
         .with_context(|| format!("Failed to load config from {}", args.config))?;
 
     // Initialize database with connection pool
     let db_manager = Arc::new(DatabaseManager::new(&config.database).await?);
 
     // Initialize core components
-    let threat_intel = Arc::new(exploit_detector::utils::threat_intel::ThreatIntelManager::new(
+    let threat_intel = Arc::new(crate::utils::threat_intel::ThreatIntelManager::new(
         &config.threat_intel,
     )?);
 
-    let vuln_manager = Arc::new(exploit_detector::utils::vulnerability::VulnerabilityManager::new(
+    let vuln_manager = Arc::new(crate::utils::vulnerability::VulnerabilityManager::new(
         config.cve_manager.clone(),
         config.software_inventory.clone(),
         config.vulnerability_scanner.clone(),
         config.patch_manager.clone(),
     )?);
 
-    let incident_manager = Arc::new(exploit_detector::response::incident_response::IncidentResponseManager::new(
+    let incident_manager = Arc::new(crate::response::incident_response::IncidentResponseManager::new(
         config.incident_response.clone(),
         (*db_manager).clone(),
     )?);
 
-    let model_manager = Arc::new(exploit_detector::ml::ModelManager::new(
+    let model_manager = Arc::new(crate::ml::ModelManager::new(
         &config.ml,
         (*db_manager).clone(),
     ).await?);
 
-    let analytics_manager = Arc::new(exploit_detector::analytics::AnalyticsManager::new(
+    let analytics_manager = Arc::new(crate::analytics::AnalyticsManager::new(
         (*db_manager).clone(),
     )?);
 

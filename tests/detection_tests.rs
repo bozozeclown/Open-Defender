@@ -1,6 +1,6 @@
-use exploit_detector::analytics::detection::*;
-use exploit_detector::collectors::DataEvent;
-use exploit_detector::error::AppResult;
+use crate::analytics::detection::*;
+use crate::collectors::DataEvent;
+use crate::error::AppResult;
 
 #[tokio::test]
 async fn test_kmeans_anomaly_detection() -> AppResult<()> {

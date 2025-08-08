@@ -1,0 +1,35 @@
+global:
+  environment: production
+  image:
+    repository: your-registry/security-monitoring
+    tag: latest
+    pullPolicy: IfNotPresent
+
+security:
+  jwtSecret: ""
+  vaultToken: ""
+  postgresPassword: ""
+  redisPassword: ""
+  grafanaPassword: ""
+
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 15
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 10

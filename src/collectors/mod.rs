@@ -4,10 +4,6 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{debug, error, info};
 
-pub mod network_collector;
-pub mod process_collector;
-pub mod file_collector;
-pub mod syslog_collector;
 
 use crate::analytics::AnalyticsManager;
 use crate::error::AppResult;

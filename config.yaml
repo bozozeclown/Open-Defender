@@ -1,0 +1,32 @@
+# Configuration for Open-Defender v0.1.0
+app:
+  name: "Open-Defender"
+  version: "0.1.0"
+  environment: "development"
+  
+database:
+  url: "postgres://security_user:***@localhost:5432/security_monitoring"
+  max_connections: 10
+  min_connections: 5
+  ssl_mode: "prefer"
+  
+analytics:
+  event_buffer_size: 10000
+  port_scan_threshold: 50
+  data_exfiltration_threshold: 10485760
+  suspicious_processes: "powershell.exe,cmd.exe,wscript.exe,cscript.exe,rundll32.exe,regsvr32.exe"
+  system_metrics_interval: 60
+  
+api:
+  cors_origins: "http://localhost:3000"
+  jwt_expiry_hours: 24
+  
+observability:
+  log_level: "info"
+  jaeger_endpoint: "localhost:6831"
+  enable_tracing: true
+  enable_metrics: true
+  
+security:
+  tls:
+    enabled: false

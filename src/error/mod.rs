@@ -1,4 +1,18 @@
 // src/error/mod.rs
+
+$ErrorMod = "src\error\mod.rs"
+if (-Not (Test-Path $ErrorMod)) {
+    Write-Host "ERROR: $ErrorMod missing. Please create or attach it and re-run."
+    exit
+}
+$Content = Get-Content $ErrorMod -Raw
+if ($Content -notmatch "pub use SecurityMonitoringError as AppError") {
+    Add-Content $ErrorMod "`n// Backwards-compatibility aliases`npub use SecurityMonitoringError as AppError;`npub type AppResult<T> = Result<T, SecurityMonitoringError>;`n"
+    Write-Host "AppError/AppResult aliases added to $ErrorMod"
+} else {
+    Write-Host "AppError/AppResult aliases already present in $ErrorMod"
+}
+
 use thiserror::Error;
 use std::fmt;
 use axum::{

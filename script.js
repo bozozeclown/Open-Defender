@@ -1,4 +1,401 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Session storage key
+    const SESSION_KEY = 'securityMonitoringSetup';
+    
+    // Initialize form data
+    let formData = {
+        step1: {
+            prerequisitesCheck: false
+        },
+        step2: {
+            environmentType: 'development',
+            appName: 'security-monitoring',
+            appVersion: '0.1.0',
+            deploymentMethod: 'docker',
+            graphqlPort: 8000,
+            websocketPort: 8001,
+            metricsPort: 9090
+        },
+        step3: {
+            pgDbName: 'security_monitoring',
+            pgDbUser: 'security_user',
+            pgDbHost: 'localhost'
+        },
+        step4: {
+            useExternalDb: true,
+            dbHost: 'localhost',
+            dbPort: 5432,
+            dbName: 'security_monitoring',
+            dbUser: 'security_user',
+            dbSslMode: 'prefer',
+            dbMaxConnections: 10,
+            dbMinConnections: 5,
+            enableReadReplicas: false,
+            readReplicaHosts: ''
+        },
+        step5: {
+            eventBufferSize: 10000,
+            portScanThreshold: 50,
+            dataExfiltrationThreshold: 10485760,
+            systemMetricsInterval: 60,
+            suspiciousProcesses: 'powershell.exe,cmd.exe,wscript.exe,cscript.exe,rundll32.exe,regsvr32.exe',
+            jwtExpiryHours: 24,
+            corsOrigins: 'http://localhost:3000',
+            enableTls: true,
+            tlsCertPath: '/etc/ssl/certs/server.crt',
+            tlsKeyPath: '/etc/ssl/private/server.key',
+            logLevel: 'info',
+            jaegerEndpoint: 'localhost:6831',
+            enableTracing: true,
+            enableMetrics: true
+        },
+        step6: {
+            generateDockerCompose: true,
+            generateKubernetes: false,
+            generateHelm: false,
+            initDatabase: true
+        }
+    };
+    
+    // Load saved data from session storage
+    function loadFormData() {
+        const savedData = sessionStorage.getItem(SESSION_KEY);
+        if (savedData) {
+            try {
+                const parsedData = JSON.parse(savedData);
+                formData = { ...formData, ...parsedData };
+            } catch (e) {
+                console.error('Error parsing saved form data:', e);
+            }
+        }
+        populateForm();
+    }
+    
+    // Save form data to session storage
+    function saveFormData() {
+        try {
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify(formData));
+        } catch (e) {
+            console.error('Error saving form data:', e);
+        }
+    }
+    
+    // Populate form fields with saved data
+    function populateForm() {
+        // Step 1
+        document.getElementById('prerequisitesCheck').checked = formData.step1.prerequisitesCheck;
+        
+        // Step 2
+        document.getElementById('environmentType').value = formData.step2.environmentType;
+        document.getElementById('appName').value = formData.step2.appName;
+        document.getElementById('appVersion').value = formData.step2.appVersion;
+        document.getElementById('graphqlPort').value = formData.step2.graphqlPort;
+        document.getElementById('websocketPort').value = formData.step2.websocketPort;
+        document.getElementById('metricsPort').value = formData.step2.metricsPort;
+        
+        // Set deployment method
+        document.querySelectorAll('.deployment-method').forEach(method => {
+            method.classList.remove('selected');
+            if (method.dataset.method === formData.step2.deploymentMethod) {
+                method.classList.add('selected');
+            }
+        });
+        
+        // Step 3
+        document.getElementById('pgDbName').value = formData.step3.pgDbName;
+        document.getElementById('pgDbUser').value = formData.step3.pgDbUser;
+        document.getElementById('pgDbHost').value = formData.step3.pgDbHost;
+        
+        // Step 4
+        document.getElementById('useExternalDb').checked = formData.step4.useExternalDb;
+        document.getElementById('dbHost').value = formData.step4.dbHost;
+        document.getElementById('dbPort').value = formData.step4.dbPort;
+        document.getElementById('dbName').value = formData.step4.dbName;
+        document.getElementById('dbUser').value = formData.step4.dbUser;
+        document.getElementById('dbSslMode').value = formData.step4.dbSslMode;
+        document.getElementById('dbMaxConnections').value = formData.step4.dbMaxConnections;
+        document.getElementById('dbMinConnections').value = formData.step4.dbMinConnections;
+        document.getElementById('enableReadReplicas').checked = formData.step4.enableReadReplicas;
+        document.getElementById('readReplicaHosts').value = formData.step4.readReplicaHosts;
+        
+        // Toggle external/embedded config based on useExternalDb
+        if (formData.step4.useExternalDb) {
+            document.getElementById('externalDbConfig').style.display = 'block';
+            document.getElementById('embeddedDbConfig').style.display = 'none';
+        } else {
+            document.getElementById('externalDbConfig').style.display = 'none';
+            document.getElementById('embeddedDbConfig').style.display = 'block';
+        }
+        
+        // Toggle read replicas config
+        document.getElementById('readReplicasConfig').style.display = formData.step4.enableReadReplicas ? 'block' : 'none';
+        
+        // Step 5
+        document.getElementById('eventBufferSize').value = formData.step5.eventBufferSize;
+        document.getElementById('portScanThreshold').value = formData.step5.portScanThreshold;
+        document.getElementById('dataExfiltrationThreshold').value = formData.step5.dataExfiltrationThreshold;
+        document.getElementById('systemMetricsInterval').value = formData.step5.systemMetricsInterval;
+        document.getElementById('suspiciousProcesses').value = formData.step5.suspiciousProcesses;
+        document.getElementById('jwtExpiryHours').value = formData.step5.jwtExpiryHours;
+        document.getElementById('corsOrigins').value = formData.step5.corsOrigins;
+        document.getElementById('enableTls').checked = formData.step5.enableTls;
+        document.getElementById('tlsCertPath').value = formData.step5.tlsCertPath;
+        document.getElementById('tlsKeyPath').value = formData.step5.tlsKeyPath;
+        document.getElementById('logLevel').value = formData.step5.logLevel;
+        document.getElementById('jaegerEndpoint').value = formData.step5.jaegerEndpoint;
+        document.getElementById('enableTracing').checked = formData.step5.enableTracing;
+        document.getElementById('enableMetrics').checked = formData.step5.enableMetrics;
+        
+        // Toggle TLS config
+        document.getElementById('tlsConfig').style.display = formData.step5.enableTls ? 'block' : 'none';
+        
+        // Step 6
+        document.getElementById('generateDockerCompose').checked = formData.step6.generateDockerCompose;
+        document.getElementById('generateKubernetes').checked = formData.step6.generateKubernetes;
+        document.getElementById('generateHelm').checked = formData.step6.generateHelm;
+        document.getElementById('initDatabase').checked = formData.step6.initDatabase;
+    }
+    
+    // Setup event listeners for form fields
+    function setupFormListeners() {
+        // Step 1
+        document.getElementById('prerequisitesCheck').addEventListener('change', function() {
+            formData.step1.prerequisitesCheck = this.checked;
+            saveFormData();
+        });
+        
+        // Step 2
+        document.getElementById('environmentType').addEventListener('change', function() {
+            formData.step2.environmentType = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('appName').addEventListener('input', function() {
+            formData.step2.appName = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('appVersion').addEventListener('input', function() {
+            formData.step2.appVersion = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('graphqlPort').addEventListener('input', function() {
+            formData.step2.graphqlPort = parseInt(this.value) || 8000;
+            saveFormData();
+        });
+        
+        document.getElementById('websocketPort').addEventListener('input', function() {
+            formData.step2.websocketPort = parseInt(this.value) || 8001;
+            saveFormData();
+        });
+        
+        document.getElementById('metricsPort').addEventListener('input', function() {
+            formData.step2.metricsPort = parseInt(this.value) || 9090;
+            saveFormData();
+        });
+        
+        // Deployment method selection
+        document.querySelectorAll('.deployment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                document.querySelectorAll('.deployment-method').forEach(m => m.classList.remove('selected'));
+                this.classList.add('selected');
+                formData.step2.deploymentMethod = this.dataset.method;
+                saveFormData();
+            });
+        });
+        
+        // Step 3
+        document.getElementById('pgDbName').addEventListener('input', function() {
+            formData.step3.pgDbName = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('pgDbUser').addEventListener('input', function() {
+            formData.step3.pgDbUser = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('pgDbHost').addEventListener('input', function() {
+            formData.step3.pgDbHost = this.value;
+            saveFormData();
+        });
+        
+        // Step 4
+        document.getElementById('useExternalDb').addEventListener('change', function() {
+            formData.step4.useExternalDb = this.checked;
+            saveFormData();
+            
+            if (this.checked) {
+                document.getElementById('externalDbConfig').style.display = 'block';
+                document.getElementById('embeddedDbConfig').style.display = 'none';
+            } else {
+                document.getElementById('externalDbConfig').style.display = 'none';
+                document.getElementById('embeddedDbConfig').style.display = 'block';
+            }
+        });
+        
+        document.getElementById('dbHost').addEventListener('input', function() {
+            formData.step4.dbHost = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('dbPort').addEventListener('input', function() {
+            formData.step4.dbPort = parseInt(this.value) || 5432;
+            saveFormData();
+        });
+        
+        document.getElementById('dbName').addEventListener('input', function() {
+            formData.step4.dbName = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('dbUser').addEventListener('input', function() {
+            formData.step4.dbUser = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('dbSslMode').addEventListener('change', function() {
+            formData.step4.dbSslMode = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('dbMaxConnections').addEventListener('input', function() {
+            formData.step4.dbMaxConnections = parseInt(this.value) || 10;
+            saveFormData();
+        });
+        
+        document.getElementById('dbMinConnections').addEventListener('input', function() {
+            formData.step4.dbMinConnections = parseInt(this.value) || 5;
+            saveFormData();
+        });
+        
+        document.getElementById('enableReadReplicas').addEventListener('change', function() {
+            formData.step4.enableReadReplicas = this.checked;
+            saveFormData();
+            
+            document.getElementById('readReplicasConfig').style.display = this.checked ? 'block' : 'none';
+        });
+        
+        document.getElementById('readReplicaHosts').addEventListener('input', function() {
+            formData.step4.readReplicaHosts = this.value;
+            saveFormData();
+        });
+        
+        // Step 5
+        document.getElementById('eventBufferSize').addEventListener('input', function() {
+            formData.step5.eventBufferSize = parseInt(this.value) || 10000;
+            saveFormData();
+        });
+        
+        document.getElementById('portScanThreshold').addEventListener('input', function() {
+            formData.step5.portScanThreshold = parseInt(this.value) || 50;
+            saveFormData();
+        });
+        
+        document.getElementById('dataExfiltrationThreshold').addEventListener('input', function() {
+            formData.step5.dataExfiltrationThreshold = parseInt(this.value) || 10485760;
+            saveFormData();
+        });
+        
+        document.getElementById('systemMetricsInterval').addEventListener('input', function() {
+            formData.step5.systemMetricsInterval = parseInt(this.value) || 60;
+            saveFormData();
+        });
+        
+        document.getElementById('suspiciousProcesses').addEventListener('input', function() {
+            formData.step5.suspiciousProcesses = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('jwtExpiryHours').addEventListener('input', function() {
+            formData.step5.jwtExpiryHours = parseInt(this.value) || 24;
+            saveFormData();
+        });
+        
+        document.getElementById('corsOrigins').addEventListener('input', function() {
+            formData.step5.corsOrigins = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('enableTls').addEventListener('change', function() {
+            formData.step5.enableTls = this.checked;
+            saveFormData();
+            
+            document.getElementById('tlsConfig').style.display = this.checked ? 'block' : 'none';
+        });
+        
+        document.getElementById('tlsCertPath').addEventListener('input', function() {
+            formData.step5.tlsCertPath = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('tlsKeyPath').addEventListener('input', function() {
+            formData.step5.tlsKeyPath = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('logLevel').addEventListener('change', function() {
+            formData.step5.logLevel = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('jaegerEndpoint').addEventListener('input', function() {
+            formData.step5.jaegerEndpoint = this.value;
+            saveFormData();
+        });
+        
+        document.getElementById('enableTracing').addEventListener('change', function() {
+            formData.step5.enableTracing = this.checked;
+            saveFormData();
+        });
+        
+        document.getElementById('enableMetrics').addEventListener('change', function() {
+            formData.step5.enableMetrics = this.checked;
+            saveFormData();
+        });
+        
+        // Step 6
+        document.getElementById('generateDockerCompose').addEventListener('change', function() {
+            formData.step6.generateDockerCompose = this.checked;
+            saveFormData();
+        });
+        
+        document.getElementById('generateKubernetes').addEventListener('change', function() {
+            formData.step6.generateKubernetes = this.checked;
+            saveFormData();
+        });
+        
+        document.getElementById('generateHelm').addEventListener('change', function() {
+            formData.step6.generateHelm = this.checked;
+            saveFormData();
+        });
+        
+        document.getElementById('initDatabase').addEventListener('change', function() {
+            formData.step6.initDatabase = this.checked;
+            saveFormData();
+        });
+    }
+    
+    // Add clear session button
+    function addClearSessionButton() {
+        const clearButton = document.createElement('button');
+        clearButton.className = 'btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-3';
+        clearButton.innerHTML = '<i class="bi bi-trash"></i> Clear Session';
+        clearButton.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all saved form data?')) {
+                sessionStorage.removeItem(SESSION_KEY);
+                location.reload();
+            }
+        });
+        document.querySelector('.setup-container').appendChild(clearButton);
+    }
+    
+    // Initialize
+    loadFormData();
+    setupFormListeners();
+    addClearSessionButton();
+    
     // Step navigation
     const steps = document.querySelectorAll('.step');
     const stepContents = document.querySelectorAll('.step-content');
@@ -19,8 +416,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Step 2: Environment
     const prevStep2 = document.getElementById('prevStep2');
     const nextStep2 = document.getElementById('nextStep2');
-    const deploymentMethods = document.querySelectorAll('.deployment-method');
-    let selectedDeploymentMethod = 'docker';
+    let selectedDeploymentMethod = formData.step2.deploymentMethod;
     
     prevStep2.addEventListener('click', function() {
         goToStep(1);
@@ -29,17 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
     nextStep2.addEventListener('click', function() {
         goToStep(3);
     });
-    
-    deploymentMethods.forEach(method => {
-        method.addEventListener('click', function() {
-            deploymentMethods.forEach(m => m.classList.remove('selected'));
-            this.classList.add('selected');
-            selectedDeploymentMethod = this.dataset.method;
-        });
-    });
-    
-    // Set default selected deployment method
-    document.querySelector('.deployment-method[data-method="docker"]').classList.add('selected');
     
     // Step 3: PostgreSQL Setup
     const prevStep3 = document.getElementById('prevStep3');
@@ -58,7 +443,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('dbHost').value = document.getElementById('pgDbHost').value;
         document.getElementById('dbName').value = document.getElementById('pgDbName').value;
         document.getElementById('dbUser').value = document.getElementById('pgDbUser').value;
-        document.getElementById('dbPassword').value = document.getElementById('pgDbPassword').value;
+        
+        // Update formData for step4
+        formData.step4.dbHost = document.getElementById('pgDbHost').value;
+        formData.step4.dbName = document.getElementById('pgDbName').value;
+        formData.step4.dbUser = document.getElementById('pgDbUser').value;
+        saveFormData();
         
         goToStep(4);
     });
@@ -174,20 +564,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1500);
     });
     
-    useExternalDb.addEventListener('change', function() {
-        if (this.checked) {
-            externalDbConfig.style.display = 'block';
-            embeddedDbConfig.style.display = 'none';
-        } else {
-            externalDbConfig.style.display = 'none';
-            embeddedDbConfig.style.display = 'block';
-        }
-    });
-    
-    enableReadReplicas.addEventListener('change', function() {
-        readReplicasConfig.style.display = this.checked ? 'block' : 'none';
-    });
-    
     // Step 5: Application Configuration
     const prevStep5 = document.getElementById('prevStep5');
     const nextStep5 = document.getElementById('nextStep5');
@@ -222,10 +598,6 @@ document.addEventListener('DOMContentLoaded', function() {
             secret += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         jwtSecret.value = secret;
-    });
-    
-    enableTls.addEventListener('change', function() {
-        tlsConfig.style.display = this.checked ? 'block' : 'none';
     });
     
     // Step 6: Deployment
@@ -279,7 +651,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     finishSetup.addEventListener('click', function() {
-        alert('Setup completed successfully! You can now deploy your Security Monitoring System.');
+        if (confirm('Setup completed successfully! Your session data will be cleared. Do you want to proceed?')) {
+            sessionStorage.removeItem(SESSION_KEY);
+            alert('Setup completed successfully! You can now deploy your Security Monitoring System.');
+        }
     });
     
     // Helper functions
@@ -313,28 +688,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function generateConfigPreview() {
-        const environment = document.getElementById('environmentType').value;
-        const appName = document.getElementById('appName').value;
-        const appVersion = document.getElementById('appVersion').value;
-        const dbHost = document.getElementById('dbHost').value;
-        const dbPort = document.getElementById('dbPort').value;
-        const dbName = document.getElementById('dbName').value;
-        const dbUser = document.getElementById('dbUser').value;
-        const dbSslMode = document.getElementById('dbSslMode').value;
-        const dbMaxConnections = document.getElementById('dbMaxConnections').value;
-        const dbMinConnections = document.getElementById('dbMinConnections').value;
-        const eventBufferSize = document.getElementById('eventBufferSize').value;
-        const portScanThreshold = document.getElementById('portScanThreshold').value;
-        const dataExfiltrationThreshold = document.getElementById('dataExfiltrationThreshold').value;
-        const systemMetricsInterval = document.getElementById('systemMetricsInterval').value;
-        const suspiciousProcesses = document.getElementById('suspiciousProcesses').value;
-        const jwtExpiryHours = document.getElementById('jwtExpiryHours').value;
-        const corsOrigins = document.getElementById('corsOrigins').value;
-        const logLevel = document.getElementById('logLevel').value;
-        const jaegerEndpoint = document.getElementById('jaegerEndpoint').value;
-        const enableTracing = document.getElementById('enableTracing').checked;
-        const enableMetrics = document.getElementById('enableMetrics').checked;
-        const enableTls = document.getElementById('enableTls').checked;
+        const environment = formData.step2.environmentType;
+        const appName = formData.step2.appName;
+        const appVersion = formData.step2.appVersion;
+        const dbHost = formData.step4.dbHost;
+        const dbPort = formData.step4.dbPort;
+        const dbName = formData.step4.dbName;
+        const dbUser = formData.step4.dbUser;
+        const dbSslMode = formData.step4.dbSslMode;
+        const dbMaxConnections = formData.step4.dbMaxConnections;
+        const dbMinConnections = formData.step4.dbMinConnections;
+        const eventBufferSize = formData.step5.eventBufferSize;
+        const portScanThreshold = formData.step5.portScanThreshold;
+        const dataExfiltrationThreshold = formData.step5.dataExfiltrationThreshold;
+        const systemMetricsInterval = formData.step5.systemMetricsInterval;
+        const suspiciousProcesses = formData.step5.suspiciousProcesses;
+        const jwtExpiryHours = formData.step5.jwtExpiryHours;
+        const corsOrigins = formData.step5.corsOrigins;
+        const logLevel = formData.step5.logLevel;
+        const jaegerEndpoint = formData.step5.jaegerEndpoint;
+        const enableTracing = formData.step5.enableTracing;
+        const enableMetrics = formData.step5.enableMetrics;
+        const enableTls = formData.step5.enableTls;
         
         let config = `# Configuration for ${appName} v${appVersion}
 app:
@@ -370,15 +745,15 @@ security:
     enabled: ${enableTls}`;
                 
         if (enableTls) {
-            const tlsCertPath = document.getElementById('tlsCertPath').value;
-            const tlsKeyPath = document.getElementById('tlsKeyPath').value;
+            const tlsCertPath = formData.step5.tlsCertPath;
+            const tlsKeyPath = formData.step5.tlsKeyPath;
             config += `
     cert_path: "${tlsCertPath}"
     key_path: "${tlsKeyPath}"`;
         }
         
-        if (enableReadReplicas.checked) {
-            const readReplicaHosts = document.getElementById('readReplicaHosts').value;
+        if (formData.step4.enableReadReplicas) {
+            const readReplicaHosts = formData.step4.readReplicaHosts;
             config += `
   read_replicas: "${readReplicaHosts}"`;
         }
@@ -392,21 +767,21 @@ security:
     }
     
     function generateDockerComposeFile() {
-        const appName = document.getElementById('appName').value;
-        const graphqlPort = document.getElementById('graphqlPort').value;
-        const websocketPort = document.getElementById('websocketPort').value;
-        const metricsPort = document.getElementById('metricsPort').value;
-        const dbHost = document.getElementById('dbHost').value;
-        const dbPort = document.getElementById('dbPort').value;
-        const dbName = document.getElementById('dbName').value;
-        const dbUser = document.getElementById('dbUser').value;
+        const appName = formData.step2.appName;
+        const graphqlPort = formData.step2.graphqlPort;
+        const websocketPort = formData.step2.websocketPort;
+        const metricsPort = formData.step2.metricsPort;
+        const dbHost = formData.step4.dbHost;
+        const dbPort = formData.step4.dbPort;
+        const dbName = formData.step4.dbName;
+        const dbUser = formData.step4.dbUser;
         const dbPassword = document.getElementById('dbPassword').value;
         
         let compose = `version: '3.8'
 
 services:
   ${appName}:
-    image: Open-Defender:latest
+    image: security-monitoring:latest
     container_name: ${appName}
     ports:
       - "${graphqlPort}:8000"
@@ -484,15 +859,15 @@ networks:
     }
     
     function updateDeploymentSummary() {
-        const environment = document.getElementById('environmentType').value;
+        const environment = formData.step2.environmentType;
         const deploymentMethod = selectedDeploymentMethod;
-        const useExternal = document.getElementById('useExternalDb').checked;
-        const dbHost = document.getElementById('dbHost').value;
-        const dbPort = document.getElementById('dbPort').value;
-        const dbName = document.getElementById('dbName').value;
-        const graphqlPort = document.getElementById('graphqlPort').value;
-        const websocketPort = document.getElementById('websocketPort').value;
-        const metricsPort = document.getElementById('metricsPort').value;
+        const useExternal = formData.step4.useExternalDb;
+        const dbHost = formData.step4.dbHost;
+        const dbPort = formData.step4.dbPort;
+        const dbName = formData.step4.dbName;
+        const graphqlPort = formData.step2.graphqlPort;
+        const websocketPort = formData.step2.websocketPort;
+        const metricsPort = formData.step2.metricsPort;
         
         document.getElementById('summaryEnvironment').textContent = environment.charAt(0).toUpperCase() + environment.slice(1);
         document.getElementById('summaryDeploymentMethod').textContent = deploymentMethod.charAt(0).toUpperCase() + deploymentMethod.slice(1);
@@ -526,8 +901,8 @@ networks:
                     </li>
                     <li>Access the application:
                         <ul>
-                            <li>GraphQL API: http://localhost:${document.getElementById('graphqlPort').value}</li>
-                            <li>WebSocket: ws://localhost:${document.getElementById('websocketPort').value}</li>
+                            <li>GraphQL API: http://localhost:${formData.step2.graphqlPort}</li>
+                            <li>WebSocket: ws://localhost:${formData.step2.websocketPort}</li>
                             <li>Grafana Dashboard: http://localhost:3000 (admin/admin)</li>
                         </ul>
                     </li>
@@ -548,15 +923,15 @@ networks:
                         <pre class="mt-2 mb-2 p-2 bg-light">kubectl apply -f .</pre>
                     </li>
                     <li>Check the status of the pods:
-                        <pre class="mt-2 mb-2 p-2 bg-light">kubectl get pods -n Open-Defender</pre>
+                        <pre class="mt-2 mb-2 p-2 bg-light">kubectl get pods -n security-monitoring</pre>
                     </li>
                     <li>Access the application:
                         <ul>
                             <li>Get the service IP:
-                                <pre class="mt-2 mb-2 p-2 bg-light">kubectl get svc -n Open-Defender</pre>
+                                <pre class="mt-2 mb-2 p-2 bg-light">kubectl get svc -n security-monitoring</pre>
                             </li>
-                            <li>GraphQL API: http://&lt;service-ip&gt;:${document.getElementById('graphqlPort').value}</li>
-                            <li>WebSocket: ws://&lt;service-ip&gt;:${document.getElementById('websocketPort').value}</li>
+                            <li>GraphQL API: http://&lt;service-ip&gt;:${formData.step2.graphqlPort}</li>
+                            <li>WebSocket: ws://&lt;service-ip&gt;:${formData.step2.websocketPort}</li>
                         </ul>
                     </li>
                 </ol>
@@ -568,26 +943,26 @@ networks:
                     <li>Extract the downloaded Helm chart.</li>
                     <li>Ensure Helm is installed and configured to connect to your cluster.</li>
                     <li>Install the chart:
-                        <pre class="mt-2 mb-2 p-2 bg-light">helm install Open-Defender ./Open-Defender</pre>
+                        <pre class="mt-2 mb-2 p-2 bg-light">helm install security-monitoring ./security-monitoring</pre>
                     </li>
                     <li>Check the status of the release:
-                        <pre class="mt-2 mb-2 p-2 bg-light">helm status Open-Defender</pre>
+                        <pre class="mt-2 mb-2 p-2 bg-light">helm status security-monitoring</pre>
                     </li>
                     <li>Check the status of the pods:
-                        <pre class="mt-2 mb-2 p-2 bg-light">kubectl get pods -n Open-Defender</pre>
+                        <pre class="mt-2 mb-2 p-2 bg-light">kubectl get pods -n security-monitoring</pre>
                     </li>
                     <li>Access the application:
                         <ul>
                             <li>Get the service IP:
-                                <pre class="mt-2 mb-2 p-2 bg-light">kubectl get svc -n Open-Defender</pre>
+                                <pre class="mt-2 mb-2 p-2 bg-light">kubectl get svc -n security-monitoring</pre>
                             </li>
-                            <li>GraphQL API: http://&lt;service-ip&gt;:${document.getElementById('graphqlPort').value}</li>
-                            <li>WebSocket: ws://&lt;service-ip&gt;:${document.getElementById('websocketPort').value}</li>
+                            <li>GraphQL API: http://&lt;service-ip&gt;:${formData.step2.graphqlPort}</li>
+                            <li>WebSocket: ws://&lt;service-ip&gt;:${formData.step2.websocketPort}</li>
                         </ul>
                     </li>
                 </ol>
                 <p>To uninstall the release, run:</p>
-                <pre class="mt-2 mb-2 p-2 bg-light">helm uninstall Open-Defender</pre>
+                <pre class="mt-2 mb-2 p-2 bg-light">helm uninstall security-monitoring</pre>
             `;
         }
         

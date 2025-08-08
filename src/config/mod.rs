@@ -126,3 +126,6 @@ impl Config {
         Ok(())
     }
 }
+// Backwards-compatibility alias: some modules expect AppConfig
+pub type AppConfig = Config;
+

@@ -1,9 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
-use exploit_detector::analytics::detection::AdvancedDetectionEngine;
-use exploit_detector::cache::DetectionCache;
-use exploit_detector::collectors::DataEvent;
-use exploit_detector::config::AppConfig;
-use exploit_detector::database::DatabaseManager;
+use crate::analytics::detection::AdvancedDetectionEngine;
+use crate::cache::DetectionCache;
+use crate::collectors::DataEvent;
+use crate::config::AppConfig;
+use crate::database::DatabaseManager;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use std::time::Duration;
@@ -101,7 +101,7 @@ fn create_test_event() -> DataEvent {
         timestamp: chrono::Utc::now(),
         event_type: "network".to_string(),
         source: "benchmark".to_string(),
-        data: exploit_detector::collectors::EventData::Network {
+        data: crate::collectors::EventData::Network {
             src_ip: "192.168.1.1".to_string(),
             dst_ip: "10.0.0.1".to_string(),
             src_port: 12345,
