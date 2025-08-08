@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Monitoring System - Installation Setup</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        /* Previous styles remain the same */
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --info-color: #0dcaf0;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .setup-container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        .setup-header {
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            color: white;
+            padding: 20px 30px;
+        }
+        
+        .setup-body {
+            padding: 30px;
+        }
+        
+        .step-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .step-nav::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #e9ecef;
+            z-index: 1;
+        }
+        
+        .step {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100px;
+        }
+        
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active .step-circle {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .step.completed .step-circle {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .step-title {
+            font-size: 0.8rem;
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        .step.active .step-title {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .step.completed .step-title {
+            color: var(--success-color);
+        }
+        
+        .step-content {
+            display: none;
+        }
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 6px;
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 6px;
+            padding: 8px 20px;
+        }
+        
+        .btn-outline-secondary {
+            border-radius: 6px;
+            padding: 8px 20px;
+        }
+        
+        .config-preview {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .alert {
+            border-radius: 6px;
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+        
+        .spinner-border {
+            width: 1.2rem;
+            height: 1.2rem;
+        }
+        
+        .deployment-method {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .deployment-method:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .deployment-method.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        
+        .deployment-method-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .requirements-list {
+            padding-left: 20px;
+        }
+        
+        .requirements-list li {
+            margin-bottom: 8px;
+        }
+        
+        .port-input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .port-input-group .form-control {
+            margin-right: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .download-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .download-option {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .download-option:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .download-option.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        
+        .download-option-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .command-block {
+            background-color: #212529;
+            color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .copy-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .os-tabs {
+            margin-bottom: 20px;
+        }
+        
+        .os-tab {
+            cursor: pointer;
+            padding: 10px 20px;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            border-radius: 6px 6px 0 0;
+            margin-right: 5px;
+        }
+        
+        .os-tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .db-creation-steps {
+            counter-reset: step;
+        }
+        
+        .db-creation-step {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 20px;
+        }
+        
+        .db-creation-step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-header">
+            <h1 class="h3 mb-0">Security Monitoring System Installation</h1>
+            <p class="mb-0 opacity-75">Follow these steps to configure and deploy your security monitoring system</p>
+        </div>
+        
+        <div class="setup-body">
+            <div class="step-nav">
+                <div class="step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-title">Prerequisites</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-title">Environment</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-title">PostgreSQL Setup</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <div class="step-title">Database</div>
+                </div>
+                <div class="step" data-step="5">
+                    <div class="step-circle">5</div>
+                    <div class="step-title">Configuration</div>
+                </div>
+                <div class="step" data-step="6">
+                    <div class="step-circle">6</div>
+                    <div class="step-title">Deployment</div>
+                </div>
+            </div>
+            
+            <div class="progress mb-4">
+                <div class="progress-bar" role="progressbar" style="width: 16.66%" aria-valuenow="16.66" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            
+            <!-- Step 1: Prerequisites -->
+            <div class="step-content active" id="step-1">
+                <h3 class="mb-4">System Prerequisites</h3>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Before proceeding with the installation, ensure your system meets the following requirements.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Hardware Requirements</h5>
+                        <ul class="requirements-list">
+                            <li><strong>CPU:</strong> 4 cores minimum (8 cores recommended)</li>
+                            <li><strong>RAM:</strong> 8GB minimum (16GB recommended)</li>
+                            <li><strong>Storage:</strong> 50GB free space (SSD recommended)</li>
+                            <li><strong>Network:</strong> Stable internet connection for downloading dependencies</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Software Requirements</h5>
+                        <ul class="requirements-list">
+                            <li><strong>Docker:</strong> Version 20.10 or higher</li>
+                            <li><strong>Docker Compose:</strong> Version 1.29 or higher</li>
+                            <li><strong>Kubernetes:</strong> Version 1.22+ (for K8s deployment)</li>
+                            <li><strong>kubectl:</strong> Configured to connect to your cluster</li>
+                            <li><strong>Helm:</strong> Version 3.5+ (for Helm deployment)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5 class="mb-3">External Dependencies</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">PostgreSQL Database</h6>
+                                    <p class="card-text">Version 12 or higher. Will be installed in the next step.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Redis Cache</h6>
+                                    <p class="card-text">Version 6 or higher. Used for session management and caching.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="prerequisitesCheck">
+                    <label class="form-check-label" for="prerequisitesCheck">
+                        I confirm that my system meets all the prerequisites listed above
+                    </label>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <div></div>
+                    <button type="button" class="btn btn-primary" id="nextStep1" disabled>
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 2: Environment Setup -->
+            <div class="step-content" id="step-2">
+                <h3 class="mb-4">Environment Configuration</h3>
+                
+                <div class="mb-4">
+                    <label class="form-label">Select Environment Type</label>
+                    <select class="form-select" id="environmentType">
+                        <option value="development">Development</option>
+                        <option value="production">Production</option>
+                        <option value="staging">Staging</option>
+                    </select>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label" for="appName">Application Name</label>
+                            <input type="text" class="form-control" id="appName" value="Open-Defender">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label" for="appVersion">Application Version</label>
+                            <input type="text" class="form-control" id="appVersion" value="0.1.0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Deployment Method</label>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="deployment-method" data-method="docker">
+                                <div class="deployment-method-icon">
+                                    <i class="bi bi-box"></i>
+                                </div>
+                                <h6>Docker Compose</h6>
+                                <p class="small text-muted">Simple deployment using Docker containers</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="deployment-method" data-method="kubernetes">
+                                <div class="deployment-method-icon">
+                                    <i class="bi bi-hdd-network"></i>
+                                </div>
+                                <h6>Kubernetes</h6>
+                                <p class="small text-muted">Deploy to a Kubernetes cluster</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="deployment-method" data-method="helm">
+                                <div class="deployment-method-icon">
+                                    <i class="bi bi-life-preserver"></i>
+                                </div>
+                                <h6>Helm Chart</h6>
+                                <p class="small text-muted">Deploy using Helm package manager</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Network Configuration</label>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="port-input-group">
+                                <label class="form-label w-100">GraphQL API Port</label>
+                                <input type="number" class="form-control" id="graphqlPort" value="8069">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="port-input-group">
+                                <label class="form-label w-100">WebSocket Port</label>
+                                <input type="number" class="form-control" id="websocketPort" value="8096">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="port-input-group">
+                                <label class="form-label w-100">Metrics Port</label>
+                                <input type="number" class="form-control" id="metricsPort" value="9696">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-outline-secondary" id="prevStep2">
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextStep2">
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 3: PostgreSQL Setup (NEW STEP) -->
+            <div class="step-content" id="step-3">
+                <h3 class="mb-4">PostgreSQL Setup</h3>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    This step will guide you through downloading PostgreSQL and creating the necessary database for your security monitoring system.
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Download PostgreSQL</h5>
+                    <p>Select your operating system to download the appropriate PostgreSQL version:</p>
+                    
+                    <div class="os-tabs">
+                        <div class="os-tab active" data-os="windows">Windows</div>
+                        <div class="os-tab" data-os="linux">Linux</div>
+                        <div class="os-tab" data-os="macos">macOS</div>
+                    </div>
+                    
+                    <div id="windowsDownload" class="download-section">
+                        <h6>Windows Installation</h6>
+                        <div class="download-option selected" data-option="installer">
+                            <div class="download-option-icon">
+                                <i class="bi bi-file-earmark-exe"></i>
+                            </div>
+                            <h6>Interactive Installer</h6>
+                            <p class="small text-muted">Download the official PostgreSQL installer for Windows</p>
+                            <button class="btn btn-sm btn-primary" id="downloadWindowsInstaller">
+                                <i class="bi bi-download"></i> Download Installer
+                            </button>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-button" data-copy="curl -O https://get.enterprisedb.com/postgresql/postgresql-15.3-1-windows-x64.exe">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            curl -O https://get.enterprisedb.com/postgresql/postgresql-15.3-1-windows-x64.exe
+                        </div>
+                    </div>
+                    
+                    <div id="linuxDownload" class="download-section" style="display: none;">
+                        <h6>Linux Installation</h6>
+                        <div class="download-option selected" data-option="apt">
+                            <div class="download-option-icon">
+                                <i class="bi bi-ubuntu"></i>
+                            </div>
+                            <h6>Ubuntu/Debian</h6>
+                            <p class="small text-muted">Install PostgreSQL using APT package manager</p>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-button" data-copy="sudo apt update
+sudo apt install postgresql postgresql-contrib">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            sudo apt update<br>
+                            sudo apt install postgresql postgresql-contrib
+                        </div>
+                    </div>
+                    
+                    <div id="macosDownload" class="download-section" style="display: none;">
+                        <h6>macOS Installation</h6>
+                        <div class="download-option selected" data-option="brew">
+                            <div class="download-option-icon">
+                                <i class="bi bi-cup-hot"></i>
+                            </div>
+                            <h6>Homebrew</h6>
+                            <p class="small text-muted">Install PostgreSQL using Homebrew package manager</p>
+                        </div>
+                        
+                        <div class="command-block">
+                            <button class="copy-button" data-copy="brew install postgresql">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            brew install postgresql
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Create Database</h5>
+                    <p>Follow these steps to create the database and user for your security monitoring system:</p>
+                    
+                    <div class="db-creation-steps">
+                        <div class="db-creation-step">
+                            <h6>Start PostgreSQL Service</h6>
+                            <p>Ensure the PostgreSQL service is running on your system.</p>
+                            
+                            <div class="command-block">
+                                <button class="copy-button" data-copy="sudo systemctl start postgresql
+sudo systemctl enable postgresql">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                sudo systemctl start postgresql<br>
+                                sudo systemctl enable postgresql
+                            </div>
+                        </div>
+                        
+                        <div class="db-creation-step">
+                            <h6>Connect to PostgreSQL</h6>
+                            <p>Connect to PostgreSQL as the default postgres user.</p>
+                            
+                            <div class="command-block">
+                                <button class="copy-button" data-copy="sudo -u postgres psql">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                sudo -u postgres psql
+                            </div>
+                        </div>
+                        
+                        <div class="db-creation-step">
+                            <h6>Create Database and User</h6>
+                            <p>Run the following SQL commands to create the database and user:</p>
+                            
+                            <div class="command-block">
+                                <button class="copy-button" data-copy="CREATE DATABASE security_monitoring;
+CREATE USER security_user WITH PASSWORD 'your_secure_password';
+GRANT ALL PRIVILEGES ON DATABASE security_monitoring TO security_user;
+\q">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                CREATE DATABASE security_monitoring;<br>
+                                CREATE USER security_user WITH PASSWORD 'your_secure_password';<br>
+                                GRANT ALL PRIVILEGES ON DATABASE security_monitoring TO security_user;<br>
+                                \q
+                            </div>
+                        </div>
+                        
+                        <div class="db-creation-step">
+                            <h6>Verify Database Creation</h6>
+                            <p>Verify that the database was created successfully:</p>
+                            
+                            <div class="command-block">
+                                <button class="copy-button" data-copy="sudo -u postgres psql -c "\l"">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                sudo -u postgres psql -c "\l"
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Database Connection Information</h5>
+                    <p>Enter the database connection details you just created. These will be used in the next step.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="pgDbName">Database Name</label>
+                                <input type="text" class="form-control" id="pgDbName" placeholder="security_monitoring" value="security_monitoring">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="pgDbUser">Database Username</label>
+                                <input type="text" class="form-control" id="pgDbUser" placeholder="security_user" value="security_user">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="pgDbPassword">Database Password</label>
+                                <input type="password" class="form-control" id="pgDbPassword" placeholder="your_secure_password">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="pgDbHost">Database Host</label>
+                                <input type="text" class="form-control" id="pgDbHost" placeholder="localhost" value="localhost">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-primary" id="testPgConnection">
+                            Test Connection <i class="bi bi-plug"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="pgConnectionResult" class="alert d-none"></div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-outline-secondary" id="prevStep3">
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextStep3">
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 4: Database Configuration -->
+            <div class="step-content" id="step-4">
+                <h3 class="mb-4">Database Configuration</h3>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Configure the database connection settings for your security monitoring system. The fields below are pre-populated with the values you entered in the previous step.
+                </div>
+                
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="useExternalDb" checked>
+                        <label class="form-check-label" for="useExternalDb">
+                            Use External Database
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="externalDbConfig">
+                    <div class="mb-3">
+                        <label class="form-label" for="dbHost">Database Host</label>
+                        <input type="text" class="form-control" id="dbHost" placeholder="localhost" value="localhost">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="dbPort">Database Port</label>
+                                <input type="number" class="form-control" id="dbPort" placeholder="5432" value="5432">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="dbName">Database Name</label>
+                                <input type="text" class="form-control" id="dbName" placeholder="security_monitoring" value="security_monitoring">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="dbUser">Database Username</label>
+                                <input type="text" class="form-control" id="dbUser" placeholder="security_user" value="security_user">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="dbPassword">Database Password</label>
+                                <input type="password" class="form-control" id="dbPassword" placeholder="your_secure_password">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">SSL Mode</label>
+                        <select class="form-select" id="dbSslMode">
+                            <option value="disable">Disable</option>
+                            <option value="allow">Allow</option>
+                            <option value="prefer" selected>Prefer</option>
+                            <option value="require">Require</option>
+                            <option value="verify-ca">Verify CA</option>
+                            <option value="verify-full">Verify Full</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="dbMaxConnections">Max Connections</label>
+                                <input type="number" class="form-control" id="dbMaxConnections" placeholder="10" value="10">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="dbMinConnections">Min Connections</label>
+                                <input type="number" class="form-control" id="dbMinConnections" placeholder="5" value="5">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="embeddedDbConfig" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        The installer will create a PostgreSQL container using Docker. The database data will be stored in a Docker volume.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label" for="embeddedDbPassword">Database Password</label>
+                        <input type="password" class="form-control" id="embeddedDbPassword" placeholder="password">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enableReadReplicas">
+                        <label class="form-check-label" for="enableReadReplicas">
+                            Enable Read Replicas
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="readReplicasConfig" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Read Replica Hosts (comma-separated)</label>
+                        <input type="text" class="form-control" id="readReplicaHosts" placeholder="replica1:5432,replica2:5432">
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-outline-secondary" id="prevStep4">
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-primary" id="testDbConnection">
+                        Test Connection <i class="bi bi-plug"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextStep4">
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 5: Application Configuration -->
+            <div class="step-content" id="step-5">
+                <h3 class="mb-4">Application Configuration</h3>
+                
+                <div class="mb-4">
+                    <h5>Analytics Settings</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="eventBufferSize">Event Buffer Size</label>
+                                <input type="number" class="form-control" id="eventBufferSize" placeholder="10000" value="10000">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="portScanThreshold">Port Scan Threshold</label>
+                                <input type="number" class="form-control" id="portScanThreshold" placeholder="50" value="50">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="dataExfiltrationThreshold">Data Exfiltration Threshold (bytes)</label>
+                                <input type="number" class="form-control" id="dataExfiltrationThreshold" placeholder="10485760" value="10485760">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="systemMetricsInterval">System Metrics Interval (seconds)</label>
+                                <input type="number" class="form-control" id="systemMetricsInterval" placeholder="60" value="60">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="suspiciousProcesses">Suspicious Processes (comma-separated)</label>
+                        <input type="text" class="form-control" id="suspiciousProcesses" placeholder="powershell.exe,cmd.exe,wscript.exe" value="powershell.exe,cmd.exe,wscript.exe,cscript.exe,rundll32.exe,regsvr32.exe">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Security Settings</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="jwtSecret">JWT Secret</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="jwtSecret" placeholder="Generate a secure secret">
+                                    <button class="btn btn-outline-secondary" type="button" id="generateJwtSecret">
+                                        <i class="bi bi-arrow-clockwise"></i> Generate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="jwtExpiryHours">JWT Expiry (hours)</label>
+                                <input type="number" class="form-control" id="jwtExpiryHours" placeholder="24" value="24">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label" for="corsOrigins">CORS Origins (comma-separated)</label>
+                        <input type="text" class="form-control" id="corsOrigins" placeholder="http://localhost:3000" value="http://localhost:3000">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enableTls" checked>
+                            <label class="form-check-label" for="enableTls">
+                                Enable TLS/SSL
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="tlsConfig">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="tlsCertPath">TLS Certificate Path</label>
+                                    <input type="text" class="form-control" id="tlsCertPath" placeholder="/etc/ssl/certs/server.crt">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="tlsKeyPath">TLS Key Path</label>
+                                    <input type="text" class="form-control" id="tlsKeyPath" placeholder="/etc/ssl/private/server.key">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Observability Settings</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="logLevel">Log Level</label>
+                                <select class="form-select" id="logLevel">
+                                    <option value="trace">Trace</option>
+                                    <option value="debug">Debug</option>
+                                    <option value="info" selected>Info</option>
+                                    <option value="warn">Warn</option>
+                                    <option value="error">Error</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="jaegerEndpoint">Jaeger Endpoint</label>
+                                <input type="text" class="form-control" id="jaegerEndpoint" placeholder="localhost:6831" value="localhost:6831">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enableTracing" checked>
+                            <label class="form-check-label" for="enableTracing">
+                                Enable Tracing
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enableMetrics" checked>
+                            <label class="form-check-label" for="enableMetrics">
+                                Enable Metrics Collection
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <button class="btn btn-outline-secondary" type="button" id="previewConfig">
+                        <i class="bi bi-eye"></i> Preview Configuration
+                    </button>
+                </div>
+                
+                <div class="config-preview d-none" id="configPreview"></div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-outline-secondary" id="prevStep5">
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextStep5">
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 6: Deployment -->
+            <div class="step-content" id="step-6">
+                <h3 class="mb-4">Deployment</h3>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Review your configuration before proceeding with the deployment. The installer will generate the necessary files and provide instructions for deployment.
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Deployment Summary</h5>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Environment:</strong> <span id="summaryEnvironment">-</span></p>
+                                    <p><strong>Deployment Method:</strong> <span id="summaryDeploymentMethod">-</span></p>
+                                    <p><strong>Database:</strong> <span id="summaryDatabase">-</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>GraphQL Port:</strong> <span id="summaryGraphqlPort">-</span></p>
+                                    <p><strong>WebSocket Port:</strong> <span id="summaryWebsocketPort">-</span></p>
+                                    <p><strong>Metrics Port:</strong> <span id="summaryMetricsPort">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Generate Deployment Files</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="generateDockerCompose" checked>
+                                <label class="form-check-label" for="generateDockerCompose">
+                                    Docker Compose
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="generateKubernetes">
+                                <label class="form-check-label" for="generateKubernetes">
+                                    Kubernetes Manifests
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="generateHelm">
+                                <label class="form-check-label" for="generateHelm">
+                                    Helm Chart
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Database Initialization</h5>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="initDatabase" checked>
+                        <label class="form-check-label" for="initDatabase">
+                            Initialize database schema and data
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <button type="button" class="btn btn-primary" id="generateDeployment">
+                        <i class="bi bi-download"></i> Generate Deployment Files
+                    </button>
+                </div>
+                
+                <div class="deployment-output d-none" id="deploymentOutput">
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Deployment files generated successfully!
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5>Download Files</h5>
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button class="btn btn-outline-primary" type="button" id="downloadConfig">
+                                <i class="bi bi-file-earmark-code"></i> Configuration Files
+                            </button>
+                            <button class="btn btn-outline-primary" type="button" id="downloadDockerCompose">
+                                <i class="bi bi-file-earmark-zip"></i> Docker Compose
+                            </button>
+                            <button class="btn btn-outline-primary" type="button" id="downloadKubernetes">
+                                <i class="bi bi-file-earmark-text"></i> Kubernetes Files
+                            </button>
+                            <button class="btn btn-outline-primary" type="button" id="downloadHelm">
+                                <i class="bi bi-file-earmark-medical"></i> Helm Chart
+                            </button>
+                            <button class="btn btn-outline-primary" type="button" id="downloadAll">
+                                <i class="bi bi-file-earmark-zip"></i> Download All
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5>Deployment Instructions</h5>
+                        <div class="card">
+                            <div class="card-body">
+                                <div id="deploymentInstructions"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-outline-secondary" id="prevStep6">
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-success" id="finishSetup">
+                        <i class="bi bi-check-circle"></i> Finish Setup
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Security Monitoring System v0.1.0 | © 2023 Security Team</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Step navigation
+            const steps = document.querySelectorAll('.step');
+            const stepContents = document.querySelectorAll('.step-content');
+            const progressBar = document.querySelector('.progress-bar');
+            
+            // Step 1: Prerequisites
+            const prerequisitesCheck = document.getElementById('prerequisitesCheck');
+            const nextStep1 = document.getElementById('nextStep1');
+            
+            prerequisitesCheck.addEventListener('change', function() {
+                nextStep1.disabled = !this.checked;
+            });
+            
+            nextStep1.addEventListener('click', function() {
+                goToStep(2);
+            });
+            
+            // Step 2: Environment
+            const prevStep2 = document.getElementById('prevStep2');
+            const nextStep2 = document.getElementById('nextStep2');
+            const deploymentMethods = document.querySelectorAll('.deployment-method');
+            let selectedDeploymentMethod = 'docker';
+            
+            prevStep2.addEventListener('click', function() {
+                goToStep(1);
+            });
+            
+            nextStep2.addEventListener('click', function() {
+                goToStep(3);
+            });
+            
+            deploymentMethods.forEach(method => {
+                method.addEventListener('click', function() {
+                    deploymentMethods.forEach(m => m.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedDeploymentMethod = this.dataset.method;
+                });
+            });
+            
+            // Set default selected deployment method
+            document.querySelector('.deployment-method[data-method="docker"]').classList.add('selected');
+            
+            // Step 3: PostgreSQL Setup (NEW)
+            const prevStep3 = document.getElementById('prevStep3');
+            const nextStep3 = document.getElementById('nextStep3');
+            const osTabs = document.querySelectorAll('.os-tab');
+            const downloadSections = document.querySelectorAll('.download-section');
+            const testPgConnection = document.getElementById('testPgConnection');
+            const pgConnectionResult = document.getElementById('pgConnectionResult');
+            
+            prevStep3.addEventListener('click', function() {
+                goToStep(2);
+            });
+            
+            nextStep3.addEventListener('click', function() {
+                // Transfer PostgreSQL setup data to database configuration step
+                document.getElementById('dbHost').value = document.getElementById('pgDbHost').value;
+                document.getElementById('dbName').value = document.getElementById('pgDbName').value;
+                document.getElementById('dbUser').value = document.getElementById('pgDbUser').value;
+                document.getElementById('dbPassword').value = document.getElementById('pgDbPassword').value;
+                
+                goToStep(4);
+            });
+            
+            // OS tab switching
+            osTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    osTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const os = this.dataset.os;
+                    downloadSections.forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    
+                    document.getElementById(`${os}Download`).style.display = 'block';
+                });
+            });
+            
+            // Copy button functionality
+            document.querySelectorAll('.copy-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const textToCopy = this.getAttribute('data-copy');
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const originalHTML = this.innerHTML;
+                        this.innerHTML = '<i class="bi bi-check"></i>';
+                        setTimeout(() => {
+                            this.innerHTML = originalHTML;
+                        }, 2000);
+                    });
+                });
+            });
+            
+            // Download buttons
+            document.getElementById('downloadWindowsInstaller').addEventListener('click', function() {
+                // In a real implementation, this would trigger a download
+                alert('PostgreSQL installer download would start here');
+            });
+            
+            // Test PostgreSQL connection
+            testPgConnection.addEventListener('click', function() {
+                const dbName = document.getElementById('pgDbName').value;
+                const dbUser = document.getElementById('pgDbUser').value;
+                const dbPassword = document.getElementById('pgDbPassword').value;
+                const dbHost = document.getElementById('pgDbHost').value;
+                
+                if (!dbName || !dbUser || !dbPassword || !dbHost) {
+                    pgConnectionResult.className = 'alert alert-warning';
+                    pgConnectionResult.textContent = 'Please fill in all database connection fields';
+                    pgConnectionResult.classList.remove('d-none');
+                    return;
+                }
+                
+                // Simulate database connection test
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Testing...';
+                this.disabled = true;
+                
+                setTimeout(() => {
+                    this.innerHTML = 'Test Connection <i class="bi bi-plug"></i>';
+                    this.disabled = false;
+                    
+                    // Show success message
+                    pgConnectionResult.className = 'alert alert-success';
+                    pgConnectionResult.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Database connection successful!';
+                    pgConnectionResult.classList.remove('d-none');
+                }, 1500);
+            });
+            
+            // Step 4: Database Configuration
+            const prevStep4 = document.getElementById('prevStep4');
+            const nextStep4 = document.getElementById('nextStep4');
+            const testDbConnection = document.getElementById('testDbConnection');
+            const useExternalDb = document.getElementById('useExternalDb');
+            const externalDbConfig = document.getElementById('externalDbConfig');
+            const embeddedDbConfig = document.getElementById('embeddedDbConfig');
+            const enableReadReplicas = document.getElementById('enableReadReplicas');
+            const readReplicasConfig = document.getElementById('readReplicasConfig');
+            
+            prevStep4.addEventListener('click', function() {
+                goToStep(3);
+            });
+            
+            nextStep4.addEventListener('click', function() {
+                goToStep(5);
+            });
+            
+            testDbConnection.addEventListener('click', function() {
+                // Simulate database connection test
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Testing...';
+                this.disabled = true;
+                
+                setTimeout(() => {
+                    this.innerHTML = 'Test Connection <i class="bi bi-plug"></i>';
+                    this.disabled = false;
+                    
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success mt-2';
+                    alertDiv.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Database connection successful!';
+                    this.parentNode.appendChild(alertDiv);
+                    
+                    // Remove alert after 3 seconds
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 3000);
+                }, 1500);
+            });
+            
+            useExternalDb.addEventListener('change', function() {
+                if (this.checked) {
+                    externalDbConfig.style.display = 'block';
+                    embeddedDbConfig.style.display = 'none';
+                } else {
+                    externalDbConfig.style.display = 'none';
+                    embeddedDbConfig.style.display = 'block';
+                }
+            });
+            
+            enableReadReplicas.addEventListener('change', function() {
+                readReplicasConfig.style.display = this.checked ? 'block' : 'none';
+            });
+            
+            // Step 5: Application Configuration
+            const prevStep5 = document.getElementById('prevStep5');
+            const nextStep5 = document.getElementById('nextStep5');
+            const previewConfig = document.getElementById('previewConfig');
+            const configPreview = document.getElementById('configPreview');
+            const generateJwtSecret = document.getElementById('generateJwtSecret');
+            const jwtSecret = document.getElementById('jwtSecret');
+            const enableTls = document.getElementById('enableTls');
+            const tlsConfig = document.getElementById('tlsConfig');
+            
+            prevStep5.addEventListener('click', function() {
+                goToStep(4);
+            });
+            
+            nextStep5.addEventListener('click', function() {
+                updateDeploymentSummary();
+                goToStep(6);
+            });
+            
+            previewConfig.addEventListener('click', function() {
+                // Generate configuration preview
+                const config = generateConfigPreview();
+                configPreview.textContent = config;
+                configPreview.classList.toggle('d-none');
+            });
+            
+            generateJwtSecret.addEventListener('click', function() {
+                // Generate a random JWT secret
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                let secret = '';
+                for (let i = 0; i < 64; i++) {
+                    secret += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                jwtSecret.value = secret;
+            });
+            
+            enableTls.addEventListener('change', function() {
+                tlsConfig.style.display = this.checked ? 'block' : 'none';
+            });
+            
+            // Step 6: Deployment
+            const prevStep6 = document.getElementById('prevStep6');
+            const generateDeployment = document.getElementById('generateDeployment');
+            const deploymentOutput = document.getElementById('deploymentOutput');
+            const finishSetup = document.getElementById('finishSetup');
+            
+            prevStep6.addEventListener('click', function() {
+                goToStep(5);
+            });
+            
+            generateDeployment.addEventListener('click', function() {
+                // Simulate deployment file generation
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+                this.disabled = true;
+                
+                setTimeout(() => {
+                    this.innerHTML = '<i class="bi bi-download"></i> Generate Deployment Files';
+                    this.disabled = false;
+                    deploymentOutput.classList.remove('d-none');
+                    
+                    // Generate deployment instructions based on selected method
+                    const instructions = generateDeploymentInstructions();
+                    document.getElementById('deploymentInstructions').innerHTML = instructions;
+                }, 2000);
+            });
+            
+            // Download buttons
+            document.getElementById('downloadConfig').addEventListener('click', function() {
+                downloadFile('config.yaml', generateConfigFile());
+            });
+            
+            document.getElementById('downloadDockerCompose').addEventListener('click', function() {
+                downloadFile('docker-compose.yml', generateDockerComposeFile());
+            });
+            
+            document.getElementById('downloadKubernetes').addEventListener('click', function() {
+                // In a real implementation, this would generate a ZIP file with all Kubernetes manifests
+                alert('Kubernetes manifests would be downloaded as a ZIP file');
+            });
+            
+            document.getElementById('downloadHelm').addEventListener('click', function() {
+                // In a real implementation, this would generate a Helm chart package
+                alert('Helm chart would be downloaded as a TGZ file');
+            });
+            
+            document.getElementById('downloadAll').addEventListener('click', function() {
+                // In a real implementation, this would generate a ZIP with all files
+                alert('All files would be downloaded as a ZIP file');
+            });
+            
+            finishSetup.addEventListener('click', function() {
+                alert('Setup completed successfully! You can now deploy your Security Monitoring System.');
+            });
+            
+            // Helper functions
+            function goToStep(stepNumber) {
+                // Update step indicators
+                steps.forEach((step, index) => {
+                    if (index < stepNumber - 1) {
+                        step.classList.add('completed');
+                        step.classList.remove('active');
+                    } else if (index === stepNumber - 1) {
+                        step.classList.add('active');
+                        step.classList.remove('completed');
+                    } else {
+                        step.classList.remove('active', 'completed');
+                    }
+                });
+                
+                // Update step content
+                stepContents.forEach((content, index) => {
+                    if (index === stepNumber - 1) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
+                
+                // Update progress bar
+                const progress = (stepNumber / steps.length) * 100;
+                progressBar.style.width = `${progress}%`;
+                progressBar.setAttribute('aria-valuenow', progress);
+            }
+            
+            function generateConfigPreview() {
+                const environment = document.getElementById('environmentType').value;
+                const appName = document.getElementById('appName').value;
+                const appVersion = document.getElementById('appVersion').value;
+                const dbHost = document.getElementById('dbHost').value;
+                const dbPort = document.getElementById('dbPort').value;
+                const dbName = document.getElementById('dbName').value;
+                const dbUser = document.getElementById('dbUser').value;
+                const dbSslMode = document.getElementById('dbSslMode').value;
+                const dbMaxConnections = document.getElementById('dbMaxConnections').value;
+                const dbMinConnections = document.getElementById('dbMinConnections').value;
+                const eventBufferSize = document.getElementById('eventBufferSize').value;
+                const portScanThreshold = document.getElementById('portScanThreshold').value;
+                const dataExfiltrationThreshold = document.getElementById('dataExfiltrationThreshold').value;
+                const systemMetricsInterval = document.getElementById('systemMetricsInterval').value;
+                const suspiciousProcesses = document.getElementById('suspiciousProcesses').value;
+                const jwtExpiryHours = document.getElementById('jwtExpiryHours').value;
+                const corsOrigins = document.getElementById('corsOrigins').value;
+                const logLevel = document.getElementById('logLevel').value;
+                const jaegerEndpoint = document.getElementById('jaegerEndpoint').value;
+                const enableTracing = document.getElementById('enableTracing').checked;
+                const enableMetrics = document.getElementById('enableMetrics').checked;
+                const enableTls = document.getElementById('enableTls').checked;
+                
+                let config = `# Configuration for ${appName} v${appVersion}
+app:
+  name: "${appName}"
+  version: "${appVersion}"
+  environment: "${environment}"
+  
+database:
+  url: "postgres://${dbUser}:***@${dbHost}:${dbPort}/${dbName}"
+  max_connections: ${dbMaxConnections}
+  min_connections: ${dbMinConnections}
+  ssl_mode: "${dbSslMode}"
+  
+analytics:
+  event_buffer_size: ${eventBufferSize}
+  port_scan_threshold: ${portScanThreshold}
+  data_exfiltration_threshold: ${dataExfiltrationThreshold}
+  suspicious_processes: "${suspiciousProcesses}"
+  system_metrics_interval: ${systemMetricsInterval}
+  
+api:
+  cors_origins: "${corsOrigins}"
+  jwt_expiry_hours: ${jwtExpiryHours}
+  
+observability:
+  log_level: "${logLevel}"
+  jaeger_endpoint: "${jaegerEndpoint}"
+  enable_tracing: ${enableTracing}
+  enable_metrics: ${enableMetrics}
+  
+security:
+  tls:
+    enabled: ${enableTls}`;
+                
+                if (enableTls) {
+                    const tlsCertPath = document.getElementById('tlsCertPath').value;
+                    const tlsKeyPath = document.getElementById('tlsKeyPath').value;
+                    config += `
+    cert_path: "${tlsCertPath}"
+    key_path: "${tlsKeyPath}"`;
+                }
+                
+                if (enableReadReplicas.checked) {
+                    const readReplicaHosts = document.getElementById('readReplicaHosts').value;
+                    config += `
+  read_replicas: "${readReplicaHosts}"`;
+                }
+                
+                return config;
+            }
+            
+            function generateConfigFile() {
+                // Generate the actual configuration file content
+                return generateConfigPreview();
+            }
+            
+            function generateDockerComposeFile() {
+                const appName = document.getElementById('appName').value;
+                const graphqlPort = document.getElementById('graphqlPort').value;
+                const websocketPort = document.getElementById('websocketPort').value;
+                const metricsPort = document.getElementById('metricsPort').value;
+                const dbHost = document.getElementById('dbHost').value;
+                const dbPort = document.getElementById('dbPort').value;
+                const dbName = document.getElementById('dbName').value;
+                const dbUser = document.getElementById('dbUser').value;
+                const dbPassword = document.getElementById('dbPassword').value;
+                
+                let compose = `version: '3.8'
+
+services:
+  ${appName}:
+    image: Open-Defender:latest
+    container_name: ${appName}
+    ports:
+      - "${graphqlPort}:8000"
+      - "${websocketPort}:8001"
+      - "${metricsPort}:9090"
+    environment:
+      - DATABASE_URL=postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}
+      - RUST_LOG=info
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - security-network
+      
+  postgres:
+    image: postgres:14
+    container_name: ${appName}-postgres
+    environment:
+      - POSTGRES_DB=${dbName}
+      - POSTGRES_USER=${dbUser}
+      - POSTGRES_PASSWORD=${dbPassword}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${dbPort}:5432"
+    restart: unless-stopped
+    networks:
+      - security-network
+      
+  redis:
+    image: redis:7-alpine
+    container_name: ${appName}-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - security-network
+      
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ${appName}-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: unless-stopped
+    networks:
+      - security-network
+      
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ${appName}-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+    networks:
+      - security-network
+
+volumes:
+  postgres-data:
+  grafana-data:
+
+networks:
+  security-network:
+    driver: bridge`;
+                
+                return compose;
+            }
+            
+            function updateDeploymentSummary() {
+                const environment = document.getElementById('environmentType').value;
+                const deploymentMethod = selectedDeploymentMethod;
+                const useExternal = document.getElementById('useExternalDb').checked;
+                const dbHost = document.getElementById('dbHost').value;
+                const dbPort = document.getElementById('dbPort').value;
+                const dbName = document.getElementById('dbName').value;
+                const graphqlPort = document.getElementById('graphqlPort').value;
+                const websocketPort = document.getElementById('websocketPort').value;
+                const metricsPort = document.getElementById('metricsPort').value;
+                
+                document.getElementById('summaryEnvironment').textContent = environment.charAt(0).toUpperCase() + environment.slice(1);
+                document.getElementById('summaryDeploymentMethod').textContent = deploymentMethod.charAt(0).toUpperCase() + deploymentMethod.slice(1);
+                
+                if (useExternal) {
+                    document.getElementById('summaryDatabase').textContent = `External (${dbHost}:${dbPort}/${dbName})`;
+                } else {
+                    document.getElementById('summaryDatabase').textContent = 'Embedded (Docker)';
+                }
+                
+                document.getElementById('summaryGraphqlPort').textContent = graphqlPort;
+                document.getElementById('summaryWebsocketPort').textContent = websocketPort;
+                document.getElementById('summaryMetricsPort').textContent = metricsPort;
+            }
+            
+            function generateDeploymentInstructions() {
+                const deploymentMethod = selectedDeploymentMethod;
+                let instructions = '';
+                
+                if (deploymentMethod === 'docker') {
+                    instructions = `
+                        <h6>Docker Compose Deployment Instructions</h6>
+                        <ol>
+                            <li>Extract the downloaded files to a directory on your server.</li>
+                            <li>Navigate to the directory containing the docker-compose.yml file.</li>
+                            <li>Run the following command to start the services:
+                                <pre class="mt-2 mb-2 p-2 bg-light">docker-compose up -d</pre>
+                            </li>
+                            <li>Check the status of the services:
+                                <pre class="mt-2 mb-2 p-2 bg-light">docker-compose ps</pre>
+                            </li>
+                            <li>Access the application:
+                                <ul>
+                                    <li>GraphQL API: http://localhost:${document.getElementById('graphqlPort').value}</li>
+                                    <li>WebSocket: ws://localhost:${document.getElementById('websocketPort').value}</li>
+                                    <li>Grafana Dashboard: http://localhost:3000 (admin/admin)</li>
+                                </ul>
+                            </li>
+                        </ol>
+                        <p>To stop the services, run:</p>
+                        <pre class="mt-2 mb-2 p-2 bg-light">docker-compose down</pre>
+                    `;
+                } else if (deploymentMethod === 'kubernetes') {
+                    instructions = `
+                        <h6>Kubernetes Deployment Instructions</h6>
+                        <ol>
+                            <li>Extract the downloaded Kubernetes manifest files.</li>
+                            <li>Ensure kubectl is configured to connect to your cluster.</li>
+                            <li>Create the namespace:
+                                <pre class="mt-2 mb-2 p-2 bg-light">kubectl apply -f namespace.yaml</pre>
+                            </li>
+                            <li>Apply the configuration:
+                                <pre class="mt-2 mb-2 p-2 bg-light">kubectl apply -f .</pre>
+                            </li>
+                            <li>Check the status of the pods:
+                                <pre class="mt-2 mb-2 p-2 bg-light">kubectl get pods -n Open-Defender</pre>
+                            </li>
+                            <li>Access the application:
+                                <ul>
+                                    <li>Get the service IP:
+                                        <pre class="mt-2 mb-2 p-2 bg-light">kubectl get svc -n Open-Defender</pre>
+                                    </li>
+                                    <li>GraphQL API: http://&lt;service-ip&gt;:${document.getElementById('graphqlPort').value}</li>
+                                    <li>WebSocket: ws://&lt;service-ip&gt;:${document.getElementById('websocketPort').value}</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    `;
+                } else if (deploymentMethod === 'helm') {
+                    instructions = `
+                        <h6>Helm Deployment Instructions</h6>
+                        <ol>
+                            <li>Extract the downloaded Helm chart.</li>
+                            <li>Ensure Helm is installed and configured to connect to your cluster.</li>
+                            <li>Install the chart:
+                                <pre class="mt-2 mb-2 p-2 bg-light">helm install Open-Defender ./Open-Defender</pre>
+                            </li>
+                            <li>Check the status of the release:
+                                <pre class="mt-2 mb-2 p-2 bg-light">helm status Open-Defender</pre>
+                            </li>
+                            <li>Check the status of the pods:
+                                <pre class="mt-2 mb-2 p-2 bg-light">kubectl get pods -n Open-Defender</pre>
+                            </li>
+                            <li>Access the application:
+                                <ul>
+                                    <li>Get the service IP:
+                                        <pre class="mt-2 mb-2 p-2 bg-light">kubectl get svc -n Open-Defender</pre>
+                                    </li>
+                                    <li>GraphQL API: http://&lt;service-ip&gt;:${document.getElementById('graphqlPort').value}</li>
+                                    <li>WebSocket: ws://&lt;service-ip&gt;:${document.getElementById('websocketPort').value}</li>
+                                </ul>
+                            </li>
+                        </ol>
+                        <p>To uninstall the release, run:</p>
+                        <pre class="mt-2 mb-2 p-2 bg-light">helm uninstall Open-Defender</pre>
+                    `;
+                }
+                
+                return instructions;
+            }
+            
+            function downloadFile(filename, content) {
+                const element = document.createElement('a');
+                const file = new Blob([content], {type: 'text/yaml'});
+                element.href = URL.createObjectURL(file);
+                element.download = filename;
+                element.click();
+            }
+        });
+    </script>
+</body>
+</html>
